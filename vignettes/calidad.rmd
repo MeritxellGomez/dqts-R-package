@@ -1,0 +1,796 @@
+---
+title: "ResumenCalidadDatos"
+params: 
+  datapath: here::here("data/data_alfes_01.csv")
+  datarefpath: here::here("data/data_alfes_02.csv")
+  rangpath: 
+  colfecha: 3
+  maxdif: 30
+output: html_document
+
+---
+
+```{r setup, include=FALSE}
+library(magrittr)
+library(dplyr)
+
+knitr::opts_chunk$set(echo = TRUE)
+data <- read.csv(params$datapath, header=TRUE, sep=";")
+dataref<- read.csv(params$datarefpath, header=TRUE, sep=";")
+rangos<-read.csv(params$rangpath, header=TRUE, sep=";")
+colfecha<-params$colfecha
+maxdif<-params$maxdifopor
+```
+
+## Completitud
+Las siguientes funciones reciben un conjunto de datos.
+
+$\texttt{Completitud}$ es una función que devuelve el porcentaje de valores distintos de NA que hay en el conjunto de datos.
+
+\begin{equation}
+    \textrm{Completitud} = \left (1- \frac{\textrm{Nº datos perdidos}}{\textrm{Nº observaciones} \times \textrm{Nº variables}}\right)     \times 100
+\end{equation}
+
+$\texttt{CompletitudFilas}$ es una función que devuelve el porcentaje de filas completas distintas de NA que hay en el conjunto de datos.
+
+\begin{equation}
+    \textrm{Completitud por filas} = \left (1- \frac{\textrm{Nº filas perdidas}}{\textrm{Nº observaciones}}\right) \times     100
+\end{equation}
+        
+$\texttt{CompletitudColumnas}$ es una función que devuelve el porcentaje de columnas completas distintas de NA que hay en el conjunto de datos.
+
+\begin{equation}
+   \textrm{Completitud por columnas} = \left (1- \frac{\textrm{Nº columnas perdidas}}{\textrm{Nº variables}}\right)           \times 100
+\end{equation}
+
+```{r include=FALSE}
+Completitud<-function(datos){
+  
+  nr<-dim(datos)[1]
+  nc<-dim(datos)[2]
+  ncl<-nr*nc
+  ic<-length(which(is.na(datos)))
+  pcc<-(1-ic/ncl)*100
+  
+  return(pcc)
+}
+
+CompletitudFilas<- function(datos){
+  
+  a<-apply(datos, 1, function(x) length(which(is.na(x))))
+  nr<-dim(datos)[1]
+  nic<-length(which(a==dim(datos)[2])) 
+  pcpr=(1-nic/nr)*100 
+  
+  if(pcpr!=100) warning('One or more rows may be empty')
+
+    return(pcpr)
+}
+
+CompletitudColumnas<- function(datos){
+  
+  a<-apply(datos, 2, function(x) length(which(is.na(x))))
+  nc<-dim(datos)[2]
+  nic<-length(which(a==dim(datos)[1])) 
+  pcpc=(1-nic/nc)*100 
+  
+  if(pcpc!=100) warning('One or more columns may be empty')
+  
+  return(pcpc)
+}
+
+CompletitudVariables<-function(datos){
+  complvars<-apply(datos, 2, function(x){1-sum(is.na(x))/dim(datos)[1]}*100)
+  return(complvars)
+}
+
+CompletitudVariablesNum<-function(datos){
+  complvars<-apply(as.matrix(datos[,sapply(datos, is.numeric)]), 2, function(x){1-sum(is.na(x))/dim(datos)[1]}*100)
+  return(complvars)
+}
+```
+
+
+Tambien se dispone de la función $\texttt{IdentificarNA}$ que te devuelve la fecha de la observación del dato perdido.
+
+```{r include=FALSE}
+IdentificarNA<-function(datos, colfecha){
+  a<-apply(datos, 2, function(x){datos[which(is.na(x)), colfecha]})
+  return(a)
+}
+```
+
+Y de la función $\texttt{CompletitudVariables}$ que calcula la calidad en cuanto a completitud de cada una de las variables. 
+
+###Ejemplo1
+Vemos que los datos contienen un `r Completitud(data)`% de los datos distintos de NA, un `r CompletitudFilas(data)`% de filas distintas de NA y un `r CompletitudColumnas(data)`% de columnas distintas de NA.
+
+```{r, ejemplo completitud}
+Completitud(data)
+CompletitudFilas(data)
+CompletitudColumnas(data)
+
+#IdentificarNA(data,colfecha)
+```
+
+Sacamos la completitud por variables. 
+
+```{r echo=FALSE}
+knitr::kable(CompletitudVariables(data), col.names = "Completitud")
+```
+
+
+
+##Precisión
+Se diseñas varias métricas. Asumiendo una distribución normal de los datos:
+
+![Distribución normal](D:/Users/mgomez/Desktop/TFM/Codigo/norm2.png)
+
+###Consistencia
+
+La función $\texttt{consitentes}$ recibe una variable del conjunto de datos. Devuelve el porcentaje de valores de esa variable que se encuentran dentro del intervalo $(\bar{x}-2\sigma, \bar{x}+2\sigma)$. 
+
+La función $\texttt{Consistencia}$ recibe un conjunto de datos y aplica la función consistentes a cada variable numérica. Devuelve la media de todos los porcentajes de consistentes.
+
+\begin{equation*}
+      Consistencia = \frac{|{\{x \mid x \in (\bar{x}-2\sigma, \bar{x}+2\sigma}\}|}{total} \times 100
+\end{equation*}
+        
+```{r include=FALSE}
+consistentes<-function(variable){
+  
+  mtemp<-mean(na.omit(variable))
+  sdtemp<-sd(na.omit(variable))
+  
+  m<-mtemp-2*sdtemp
+  M<-mtemp+2*sdtemp
+  
+  inferiores<-which(variable<m)
+  superiores<-which(variable>M)
+  
+  incons<-length(inferiores)+length(superiores)
+  return((1-(incons/length(variable)))*100)
+}
+
+consistencia<-function(datos){ #aplica función consistentes a todas las variables (columnas) de datos
+  co<-apply(as.matrix(datos[,sapply(datos, is.numeric)]), 2, consistentes)
+  return(sum(as.numeric(co))/length(datos[,sapply(datos, is.numeric)])) #hace la media de todos los consistentes de cada variable
+}
+
+ConsistenciaVariables<-function(datos){
+  covars<-apply(as.matrix(datos[,sapply(datos, is.numeric)]), 2, consistentes)
+  return(covars)
+}
+
+```
+
+###Tipicidad
+
+$\texttt{Tipicidad}$ aplica la función $\texttt{tipicos}$ de manera similar a la anterior pero comprobando los valores que están dentro del intervalo $(\bar{x}-3\sigma, \bar{x}+3\sigma)$.
+
+\begin{equation*}
+    Tipicidad = \frac{|{\{x \mid x \in (\bar{x}-3\sigma, \bar{x}+3\sigma}\}|}{total} \times 100
+\end{equation*}
+
+```{r include=FALSE}
+tipicos<-function(variable){
+  
+  mtemp<-mean(na.omit(variable))
+  sdtemp<-sd(na.omit(variable))
+  
+  m<-mtemp-3*sdtemp
+  M<-mtemp+3*sdtemp
+  
+  inferiores<-which(variable<m)
+  superiores<-which(variable>M)
+  
+  atip<-length(inferiores)+length(superiores)
+ 
+  #if(atip!=0) warning('Hay valores fuera del intervalo')
+  return((1-(atip/length(variable)))*100)
+}
+
+tipicidad<-function(datos){ #aplica función atípicos a todas las variables (columnas) de datos
+  at<-apply(as.matrix(datos[,sapply(datos, is.numeric)]), 2, tipicos)
+  return(sum(as.numeric(at))/length(datos[,sapply(datos, is.numeric)])) #hace la media de todos los atipicos de cada variable
+}
+
+TipicidadVariables<-function(datos){
+  atvars<-apply(as.matrix(datos[,sapply(datos, is.numeric)]), 2, tipicos)
+  return(atvars)
+}
+```
+
+###Moderación
+
+$\texttt{Moderación}$ aplica la función $\texttt{moderados}$ a cada variable de manera análoga a las otras dos pero calculando los valores contenidos en el intervalo $\bar{x}-5\sigma, \bar{x}+5\sigma$.
+
+\begin{equation*}
+    Moderación = \frac{|{\{x \mid x \in (\bar{x}-5\sigma, \bar{x}+5\sigma}\}|}{total} \times 100
+\end{equation*}
+
+```{r include=FALSE}
+moderados<-function(variable){
+  
+  mtemp<-mean(na.omit(variable))
+  sdtemp<-sd(na.omit(variable))
+  
+  m<-mtemp-5*sdtemp
+  M<-mtemp+5*sdtemp
+  
+  inferiores<-which(variable<m)
+  superiores<-which(variable>M)
+  
+  extr<-length(inferiores)+length(superiores)
+  #if(atip!=0) warning('Hay valores fuera del intervalo')
+  return((1-(extr/length(variable)))*100)
+}
+
+moderacion<-function(datos){ #aplica función extremos a todas las variables (columnas) de datos
+  moder<-apply(as.matrix(datos[,sapply(datos, is.numeric)]), 2, moderados)
+  return(sum(as.numeric(moder))/length(datos[,sapply(datos, is.numeric)])) #hace la media de todos los extemos de cada variable
+}
+
+ModeracionVariables<-function(datos){
+    modvars<-apply(as.matrix(datos[,sapply(datos, is.numeric)]), 2, moderados)
+    return(modvars)
+}
+```
+
+
+Dependiendo del valor de esas métricas se pueden identificar los valores inconsistentes, atípicos y extremos con las funciones $\texttt{IdentificarInconsistencia}$, $\texttt{IdentificarAtipicidad}$ e $\texttt{IdentificarExtremidad}$ que devuelve la fecha de las observaciones donde fallan las métricas anteriores respectivamente. 
+
+```{r include=FALSE}
+
+logiconsistentes<-function(variable){
+  mtemp<-mean(na.omit(variable))
+  sdtemp<-sd(na.omit(variable))
+  
+  m<-mtemp-2*sdtemp
+  M<-mtemp+2*sdtemp
+  
+  logicons<-(m>variable | variable>M)
+  
+  return(logicons)
+}
+
+IdentificarInconsistencia<-function(datos, colfecha){
+  a<-apply(as.matrix(datos[,sapply(datos, is.numeric)]), 2, function(x){datos[which(logiconsistentes(x)),colfecha]})
+  return(a)
+}
+
+
+logiatipicos<-function(variable){
+  mtemp<-mean(na.omit(variable))
+  sdtemp<-sd(na.omit(variable))
+  
+  m<-mtemp-3*sdtemp
+  M<-mtemp+3*sdtemp
+  
+  logiatip<-(m>variable | variable>M)
+  
+  return(logiatip)
+}
+
+IdentificarAtipicidad<-function(datos, colfecha){
+  a<-apply(as.matrix(datos[,sapply(datos, is.numeric)]), 2, function(x){datos[which(logiatipicos(x)),colfecha]})
+  return(a)
+}
+
+
+logiextremos<-function(variable){
+  mtemp<-mean(na.omit(variable))
+  sdtemp<-sd(na.omit(variable))
+  
+  m<-mtemp-5*sdtemp
+  M<-mtemp+5*sdtemp
+  
+  logiextr<-(m>variable | variable>M)
+  
+  return(logiextr)
+}
+
+IdentificarExtremidad<-function(datos, colfecha){
+  a<-apply(as.matrix(datos[,sapply(datos, is.numeric)]), 2, function(x){datos[which(logiextremos(x)),colfecha]})
+  return(a)
+}
+```
+
+También pueden aplicarse las métricas a cada una de las variables para identificar cuál provoca la mala calidad con las funciones $\texttt{ConsistenciaVariables}$,  $\texttt{TipicidadVariables}$ y  $\texttt{ModeracionVariables}$, respectivamente. 
+
+
+###Ejemplo2
+El `r round(consistencia(data), digits=2)`% de los datos pertenece al intervalo $(\bar{x}-2\sigma, \bar{x}+2\sigma)$.
+
+El `r round(tipicidad(data), digits=2)`% de los datos pertenece al intervalo $(\bar{x}-3\sigma, \bar{x}+3\sigma)$.
+
+El `r round(moderacion(data), digits=2)`% de los datos pertenece al intervalo $(\bar{x}-5\sigma, \bar{x}+5\sigma)$.
+
+```{r include=FALSE}
+consistencia(data)
+tipicidad(data)
+moderacion(data)
+
+IdentificarInconsistencia(data, colfecha)
+IdentificarAtipicidad(data, colfecha)
+IdentificarExtremidad(data, colfecha)
+```
+
+```{r echo=FALSE}
+knitr::kable(ConsistenciaVariables(data), col.names = "Consistencia")
+
+knitr::kable(TipicidadVariables(data), col.names = "Tipicidad")
+
+knitr::kable(ModeracionVariables(data), col.names = "Moderación")
+
+```
+
+
+###UnicidadTemporal
+
+La función $\texttt{UnicidadTemporal}$recibe un conjunto de datos y un valor numérico que indica el número de la columna en la que se encuentran los datos de las fechas o los tiempos. Devuelve el porcentaje de fechas únicas que hay en esa columna. 
+
+\begin{equation}
+    \textrm{Unicidad Temporal} = \frac{\textrm{Nº fechas únicas}}{\textrm{Nº Observaciones de fechas}} \times 100
+\end{equation}
+
+```{r, UnicidadTemporal, include=FALSE}
+UnicidadTemporal<-function(datos, colfecha){
+  if(is.numeric(colfecha)==FALSE) stop('Debes introducir un valor numérico para la columna fecha')
+    length(unique(datos[,colfecha]))*100 / length(datos[,colfecha])
+}
+```
+
+También se dispone de una función identificadora de las fechas que se repiten que se llama $\texttt{IdentificarFechasRepetidas}$:
+
+```{r, identificar fechas repetidas, include=FALSE}
+IdentificarFechasRepetidas<-function(datos,colfecha){
+  fechasdupl<-which(duplicated(datos[,colfecha]))
+  return(datos[fechasdupl,colfecha])
+}
+```
+
+```{r echo=FALSE}
+TablaFechasRep<-function(datos, colfecha){ 
+  
+  FechasRepetidas<-IdentificarFechasRepetidas(data, colfecha)
+  
+  CantidadRepeticiones<-list()
+  for (i in 1:length(FechasRepetidas)){
+  auxcont<-length(which(data[,colfecha]==FechasRepetidas[i]))
+  CantidadRepeticiones<-c(CantidadRepeticiones, auxcont)
+  }
+  
+  return(knitr::kable(data.frame(FechasRepetidas,as.numeric(CantidadRepeticiones)), col.names = c("Fechas Repetidas", "Cantidad apariciones")))
+}
+
+```
+
+
+###Ejemplo3
+El `r round(UnicidadTemporal(data, colfecha), digits=2)`% de las fechas son únicas.
+```{r, ejemplo unicidad temporal}
+UnicidadTemporal(data, colfecha)
+``` 
+
+Se puede identificar las fechas que se repiten y la cantidad de veces que aparecen:
+
+```{r}
+TablaFechasRep(data, colfecha)
+```
+
+
+
+##Formato
+La función $\texttt{forms}$ recibe un conjunto de datos y devuelve una lista de sus formatos.
+
+La función $\texttt{Formato}$ recibe un conjunto de datos y una lista de formatos de referencia que deberían cumplir las variables del conjunto de datos que queremos verificar. Devuelve 100 si las listas de formatos tienen el mismo tamaño. En caso contrario, devuelve un porcentaje 
+
+```{r include=FALSE}
+forms<-function(datos){
+  formatos<-list()
+  for (i in 1:length(datos)) {
+    auxform<-class(datos[,i])
+    formatos<-c(formatos,(auxform))
+  }
+  return(formatos)
+}
+
+Formato<-function(datos, dataref){
+  f1<-forms(datos)
+  if(identical(f1,forms(dataref))==FALSE) warning('Los formatos de las variables no son correctos')
+    return((1-(abs(length(forms(dataref)) -length(f1))/length(forms(dataref))))*100)
+}
+```
+
+La función $\texttt{IdentificaFormatoErroneo}$ devuelve el nombre de las variables cuyo formato no es el correcto porque no coincide con el formato del conjunto que se le introduce como referencia. 
+```{r include=FALSE}
+IdentificaFormatoErroneo<-function(datos, dataref){
+  logiform<-list()
+  for (i in 1:length(datos)){
+      auxform<-forms(datos)[[i]]==forms(dataref)[[i]]
+      names(auxform)<-names(datos[i])
+      logiform<-c(logiform, auxform)
+  }
+  resultadoformato<-which(logiform==FALSE)
+   return(resultadoformato)
+}
+
+```
+
+###Ejemplo4
+Primero obtenemos los formatos de bateaAirQuality y los tomamos como formatos de referencia para comprobar que los de alfesAirQuality no coinciden con los de bateaAirQuality porque hemos cambiado el formato de dateObserved con lubridate anteriormente. Si tambien lo modificamos, compruebarango vale 100.
+```{r echo=FALSE}
+Formato(data, dataref)
+resultadoformato<-IdentificaFormatoErroneo(data,dataref)
+knitr::kable(resultadoformato, "html", col.names = "Variables con formato erroneo")%>%
+  kableExtra::kable_styling(bootstrap_options = "striped", full_width = F) 
+```
+
+##Temporalidad
+La función $\texttt{Temporalidad}$ recibe un conjunto de datos, un valor numérico que indica el número de la columna en la que se encuentran los datos de las fechas o los tiempos y un valor numérico máximo de espera que se permite entre observaciones. Devuelve el porcentaje de observaciones que distan de la siguiente un tiempo mayor al indicado como máximo. 
+
+```{r include=FALSE}
+diftemp<-function(datos, colfecha){
+  dif<-diff(datos[,colfecha])
+  return(dif)
+}
+
+Temporalidad<-function(datos, colfecha, maxdif){
+  dif<-diff(datos[,colfecha])
+  fueradif<-length(which(dif>maxdif))
+  return((1-(fueradif/length(dif)))*100)
+}
+```
+
+También se dispone de una función que identifica el valor de la fecha anterior a la espera y otra para la fecha posterior a la espera 
+```{r include=FALSE}
+IdentificarMalosTiempos<-function(datos, colfecha, maxdif){
+  dif<-diff(datos[,colfecha])
+  pos<-which(dif>maxdif)
+  return(datos[pos,colfecha])
+}
+IdentificarMalosTiemposPost<-function(datos,colfecha,maxdif){
+  dif<-diff(datos[,colfecha])
+  pos<-which(dif>maxdif)
+  return(datos[pos+1,colfecha])
+}
+
+TablaMalosTiempos<-function(datos, colfecha, maxdif){
+  TiemposMalos<-IdentificarMalosTiempos(datos, colfecha, maxdif)
+  TiemposMalosPosterior<-IdentificarMalosTiemposPost(datos, colfecha, maxdif)
+  TiempoEspera<-(TiemposMalosPosterior-TiemposMalos)
+  CantidadPerdida<-trunc(((as.numeric(TiemposMalosPosterior-TiemposMalos))/maxdif)-1)
+  return(knitr::kable(data.frame(TiemposMalos,TiemposMalosPosterior, TiempoEspera, CantidadPerdida)) %>% kableExtra::kable_styling() %>% kableExtra::scroll_box(width = "100%", height = "200px"))
+}
+
+```
+
+
+###Ejemplo5
+Primero convertimos las fechas con lubridate para asegurarnos que nos respetará las unidades de tiempo cuando le pasemos las funciones.
+
+```{r echo=FALSE}
+data[,colfecha]<-lubridate::ymd_hms(data[,colfecha]) #entrar dentro de la métrica
+
+temp<-diftemp(data,colfecha)
+head(temp) #mostramos unos cuantos ya que el vector entero contiene 12417 valores
+Temporalidad(data,colfecha,maxdif)
+```
+
+El `r round(Temporalidad(data,colfecha,maxdif),digits=2)` $\%$ de las fechas respetan el tiempo máximo de espera de `r maxdif`.
+
+```{r echo=FALSE}
+#fechas que se reciben con más espera de la deseada
+malostiempos<-IdentificarMalosTiempos(data, colfecha, maxdif)
+```
+
+En la tabla se recogen la última fecha antes de la espera, la fecha posterior a la espera, la duración de la espera y la cantidas de observaciones que han dejado de recibirse en ese tiempo. 
+```{r echo=FALSE}
+TablaMalosTiempos(data, colfecha, maxdif)
+```
+
+##Rango
+La función $\texttt{Rango}$ recibe un conjunto de datos para analizar y otro cuya primera fila contiene los valores mínimos para cada variable y la segunda fila los valores máximos. Calcula el porcentaje de valores de cada variable que están dentro del intervalo (Valormínimo, Valormáximo). La función devuelve la media de los porcentajes.
+
+Dados dos vectores de mínimos $m=(m_1, ..., m_{j})$ y máximos $M=(M_1,...,M_{j})$, con $j$ el número de variables del data frame, 
+\begin{equation*}
+    Rango = \frac{|\{x < m \} \cup \{x > M \}|}{total} \times 100
+\end{equation*}
+        
+```{r include=FALSE}
+Rango<-function(datos, rangos){
+  comprobar<-list()
+  for (i in 1:ncol(datos)){
+    if(is.numeric(datos[,i])){
+      auxcompr<-(length(which(datos[,i]>=rangos[1,i] & datos[,i]<=rangos[2,i])))*100/length(datos[,i])
+      comprobar<-c(comprobar, auxcompr) #lista de porcentajes de valores estan dentro del rango en cada variable
+    }
+  }  
+return(sum(as.numeric(comprobar))/length(comprobar))
+}
+```
+
+Es posible conocer la calidad de cada variable en la métrica Rango
+```{r include=FALSE}
+RangoVariables<-function(datos, rangos){
+  comprobar<-list()
+  for (i in 1:dim(datos)[2]){
+    if(is.numeric(datos[,i])){
+      auxcompr<-(length(which(datos[,i]>=rangos[1,i] & datos[,i]<=rangos[2,i])))*100/length(datos[,i])
+      names(auxcompr)<- names(datos[i])
+      comprobar<-c(comprobar, auxcompr) #lista de porcentajes de valores estan dentro del rango en cada variable
+    }
+  }  
+return(comprobar)
+}
+```
+
+Visualizar el gráfico de las variables que se deseen
+```{r echo=FALSE}
+PlotVar<-function(datos){
+  for (i in 1:dim(data)[2]){
+  if(is.numeric(data[,i])){
+    plot(data[,colfecha], data[,i], xlab="Fechas", ylab = colnames(data)[i])
+  }
+}
+}
+```
+
+
+Identificar las fechas en las que hay valores que se salen del rango
+```{r include=FALSE}
+IdentificarFueradeRango<-function(datos, rangos, colfecha){
+  comprobar<-list()
+  for (i in 1:length(datos)){
+    if(is.numeric(datos[,i])){
+      auxcompr<-list(which(datos[,i]<rangos[1,i] | datos[,i]>rangos[2,i]))
+      names(auxcompr)<-names(datos[i])
+      comprobar<-c(comprobar, auxcompr)
+    }
+  }
+  fechasfuerarango<-list()
+
+  for (i in 1:length(comprobar)){
+    auxfechas<-list(datos[comprobar[[i]], colfecha])
+    names(auxfechas)<- names(comprobar[i])
+    fechasfuerarango<-c(fechasfuerarango, auxfechas)
+  }
+
+return(fechasfuerarango)
+}
+```
+
+Identificar los valores de esos datos que están fuera de rango 
+```{r include=FALSE}
+ValoresFueraRango<-function(datos, rangos){
+  comprobar<-list()
+  for (i in 1:dim(datos)[2]){
+    if(is.numeric(datos[,i])){
+      auxcompr<-list(datos[which(datos[,i]<rangos[1,i] | datos[,i]>rangos[2,i]), i])
+      names(auxcompr)<-names(datos[i])
+      comprobar<-c(comprobar, auxcompr)
+    }
+  }
+return(comprobar)
+}
+```
+
+Mostrar en una tabla por variables las fechas de las observaciones fuera de rango y los valores de los datos que están fuera de rango. 
+
+```{r include=FALSE}
+TablaFueraRango<-function(datos, rangos, colfecha, variable){
+  if(is.numeric(datos[,variable])){
+    
+    fechas<-list(datos[which(datos[,variable]<rangos[1,variable] | datos[,variable]>rangos[2,variable]), colfecha])
+    
+    valores<-list(datos[which(datos[,variable]<rangos[1,variable] | datos[,variable]>rangos[2,variable]), variable])
+    
+    return(knitr::kable(data.frame(fechas, valores), col.names = c("Fechas", colnames(data)[variable])) %>% kableExtra::kable_styling() %>% kableExtra::scroll_box(width = "40%", height = "200px"))
+  }
+}
+```
+
+
+###Ejemplo6
+
+```{r}
+par(mfrow=c(1,2))
+PlotVar(data)
+```
+
+La calidad del Rango total es `r round(Rango(data, rangos), digits=2)` $\%$. 
+
+```{r, ejemplo rango, warning=FALSE}
+Rango(data,rangos)
+```
+
+La calidad del Rango por variables (de las variables numéricas):
+
+```{r}
+RangoVariables(data, rangos)
+``` 
+
+Las fechas en las que se encuentran los valores fuera de rango son: 
+```{r}
+#IdentificarFueradeRango(data, rangos, colfecha)
+```
+
+```{r}
+#ValoresFueraRango(data, rangos)
+```
+
+Sacamos en una tabla las fechas y los valores fuera de rango de la variable 2 (CO2)
+```{r}
+TablaFueraRango(data, rangos, colfecha, 2)
+```
+
+Sacamos también la talba de la variable 7 (temperatura)
+```{r}
+TablaFueraRango(data, rangos, colfecha, 7)
+```
+
+
+
+##Calidad
+```{r include=FALSE}
+calidad<-function(datos, colfecha, maxdif, datosref, rangos, ponderaciones){
+  
+  if(is.null(ponderaciones)){
+      ponderaciones<-c(rep(0.1,10))
+  }
+
+  p<-ponderaciones
+  
+  pcc<-Completitud(datos)
+  pcpr<-CompletitudFilas(datos)
+  pcpc<-CompletitudColumnas(datos)
+  
+  cons<-consistencia(datos)
+  tip<-tipicidad(datos)
+  mod<-moderacion(datos)
+  
+  unitemp<-UnicidadTemporal(datos,colfecha)
+  
+  temp<-Temporalidad(datos,colfecha, maxdif)
+  
+  form<-Formato(datos, datosref)
+  
+  rang<-Rango(datos, rangos)
+  
+  calidad<-(p[1]*pcc+p[2]*pcpr+p[3]*pcpc+p[4]*cons+p[5]*tip+p[6]*mod+p[7]*unitemp+p[8]*temp+p[9]*form+p[10]*rang)
+  
+  return(list(Completitud=pcc,Completitud_obs=pcpr,Completitud_var=pcpc,UnicidadTemporal=unitemp,Consistencia=cons,
+              Tipicidad=tip,Moderacion=mod, Rango=rang,Temporalidad=temp, Formato=form,
+               Calidad_Datos=calidad))
+  
+}
+```
+
+
+```{r include=FALSE}
+calidad(data[,-8], colfecha, maxdif, dataref, rangos, ponderaciones = c(0,0,0,0,0,0.2,0.1,0,0,0.7))
+calidad(data[,-8], colfecha, maxdif, dataref, rangos, ponderaciones = NULL)
+```
+
+```{r eval=FALSE, include=FALSE}
+# 
+# plot(unlist(calidad(data, colfecha, maxdif, dataref, rangos, ponderaciones = NULL)), type = "p", main = "Calidad de los datos", xlab = "Métricas", ylab = "Porcentaje de calidad")
+```
+
+```{r warning=FALSE, include=FALSE}
+calidadfinal<-unlist(calidad(data, colfecha, maxdif, dataref, rangos, ponderaciones = NULL))
+calidadfinal2<-unlist(calidad(data[,-8], colfecha, maxdif, dataref, rangos, ponderaciones = c(0,0,0,0,0.1,0.1,0.1,0.1,0,0.5)))
+calidadfinal3<-unlist(calidad(data[,-8], colfecha, maxdif, dataref, rangos, ponderaciones = NULL))
+```
+
+```{r echo=FALSE, warning=FALSE}
+library(tidyverse)
+library(ggplot2)
+# barplot(calidadfinal, xlab = "Métricas")
+
+datacalidad=data.frame(
+  id=seq(1,11),
+  individual=names(calidadfinal),
+  value1=calidadfinal,
+  value2=calidadfinal2, 
+  value3=calidadfinal3
+)
+# 
+# label_data=datacalidad
+# number_of_bar=nrow(label_data)
+# angle= 90 - 360 * (label_data$id-0.5) /number_of_bar
+# label_data$hjust<-ifelse( angle < -90, 1, 0)
+#  
+# # flip angle BY to make them readable
+# label_data$angle<-ifelse(angle < -90, angle+180, angle)
+#  
+#  
+# # Start the plot
+# p = ggplot(datacalidad, aes(x=as.factor(id), y=value)) +       # Note that id is a factor. If x is numeric, there is some space between the first bar
+#   
+#   # This add the bars with a blue color
+#   geom_bar(stat="identity", fill=alpha("skyblue", 0.7)) +
+#   
+#   # Limits of the plot = very important. The negative value controls the size of the inner circle, the positive one is useful to add size over each bar
+#   ylim(-100,120) +
+# 
+#   # Custom the theme: no axis title and no cartesian grid
+#   theme_minimal() +
+#   theme(
+#     axis.text = element_blank(),
+#     axis.title = element_blank(),
+#     panel.grid = element_blank(),
+#     plot.margin = unit(rep(-1,4), "cm")      # Adjust the margin to make in sort labels are not truncated!
+#   ) +
+#   
+#   # This makes the coordinate polar instead of cartesian.
+#   coord_polar(start = 0) +
+#   
+#   # Add the labels, using the label_data dataframe that we have created before
+#   geom_text(data=label_data, aes(x=id, y=value+10, label=individual, hjust=hjust), color="black", fontface="bold",alpha=0.5, size=2.2, angle= label_data$angle, inherit.aes = FALSE ) 
+#  
+# p
+ggplot(datacalidad, aes(x=individual, y=value1)) +
+  geom_segment( aes(x=individual, xend=individual, y=0, yend=value1)) +
+  coord_flip() +
+  geom_point( size=1, color="red", fill=alpha("orange", 0.9), alpha=0.7, shape=16, stroke=2)+
+  labs(title = "Calidad de los datos")+ ylab("Valor (%)") + xlab("Métricas")
+# ggplot(datacalidad, aes(x=individual, y=value3)) +
+#   geom_segment( aes(x=individual, xend=individual, y=0, yend=value3)) +
+#   coord_flip() +
+#   geom_point( size=1, color="purple", fill=alpha("green", 0.9), alpha=0.7, shape=16, stroke=2)
+# 
+# ggplot(datacalidad, aes(x=individual, y=value2)) +
+#   geom_segment( aes(x=individual, xend=individual, y=0, yend=value2)) +
+#   coord_flip() +
+#   geom_point( size=1, color="blue", fill=alpha("green", 0.9), alpha=0.7, shape=16, stroke=2)
+# 
+# ggplot(datacalidad) +
+#   geom_segment( aes(x=individual, xend=individual, y=0, yend=value1)) +
+#   coord_flip() +
+#   geom_point( aes(x=individual, y=value1), size=2, color="red", fill=alpha("orange", 0.6), alpha=0.7, shape=16, stroke=2)+
+#   geom_point( aes(x=individual, y=value2), size=1, color="blue", fill=alpha("green", 0.9), alpha=0.7, shape=16, stroke=2)
+
+```
+
+Podemos calcular las métricas de Completitud, Consistencia, Tipicidad, Moderación y Rango por variables y graficarlas.
+
+```{r include=FALSE}
+CalidadVariables<-function(datos, rangos){
+
+  Completitud<-CompletitudVariablesNum(datos)
+
+  Consistencia<-ConsistenciaVariables(datos)
+
+  Tipicidad<-TipicidadVariables(datos)
+
+  Moderacion<-ModeracionVariables(datos)
+
+  Rango<-as.numeric(RangoVariables(datos, rangos))
+
+  calidadvars<-data.frame(Completitud,Consistencia,Tipicidad,Moderacion,Rango)
+  
+  return(calidadvars)
+}
+
+#id=seq(1,5),individual=c("Completitud","Consistencia","Tipicidad","Moderacion","Rango"),
+```
+
+```{r echo=FALSE}
+calidadvars<-CalidadVariables(data, rangos)
+calidadvars<-as.data.frame(t(calidadvars))
+calidadvars$metricas<-rownames(calidadvars)
+
+#Dibujamos la calidad de la variable relativeHumidity
+
+ggplot(calidadvars, aes(x=metricas, y=temperature)) +
+  geom_segment( aes(x=metricas, xend=metricas, y=0, yend=temperature)) +
+  coord_flip() +
+  geom_point( size=1, color="red", fill=alpha("orange", 0.9), alpha=0.7, shape=16, stroke=2)
+
+```
+
+
+
+
