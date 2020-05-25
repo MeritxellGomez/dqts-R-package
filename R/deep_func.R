@@ -5,6 +5,10 @@
 
 # Timeliness --------------------------------------------------------------
 
+
+#study of timeliness. data is the set of values. columndate is an integer to indicate the position of the date variable
+#maxdif is an integer to indicate the maximum difference allowed between two dates
+#missing is a boolean: TRUE if we want to see all results and FALSE if we always want to see the missing intervals
 deepTimeliness <- function(data, columnDate, maxdif, missing=FALSE){
 
   dif <- diff(data[,columnDate])
