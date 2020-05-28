@@ -1,6 +1,6 @@
 #####QUALITY FUNCTION#####
 
-DQ <- function(data, columnDate, maxdif, dataref, ranges, weights, windows){
+DQ <- function(data, columnDate, maxdif, dataref, ranges, weights, windows=FALSE, cte, fixed, nint){
 
   if(is.null(columnDate)){
 
@@ -18,15 +18,17 @@ DQ <- function(data, columnDate, maxdif, dataref, ranges, weights, windows){
   }
 
 
-  if(is.null(windows)){
+
+
+  if(isFALSE(windows)){
     myquality <- quality(data, columnDate, maxdif, dataref, ranges, weights)
   }else{
 
-    #incluir que pase la funcion de calidad por cada una de las ventanas que se elija
+    ##AÑADIR AQUI LA FUNCION MOVINGWINDOW: Crear columna en el DF que indique el numero de ventana
+
+    #myquality será un data frame en el que se aplica la funcion quality en cada ventana
 
   }
-
-
 
 
   return(myquality)
