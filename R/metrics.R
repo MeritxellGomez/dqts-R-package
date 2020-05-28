@@ -56,9 +56,11 @@ TimeUniqueness <- function(data, columnDate){
 
 generateRangeData <- function(data){
 
-  mins <- lapply(data, min)
+  mysample <- data[sample(nrow(data), round(0.4*nrow(data))),]
 
-  maxs <- lapply(data, max)
+  mins <- lapply(mysample, min)
+
+  maxs <- lapply(mysample, max)
 
   df<- rbind(data.frame(mins), data.frame(maxs))
 
