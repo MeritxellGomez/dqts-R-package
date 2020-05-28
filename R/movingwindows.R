@@ -1,25 +1,12 @@
 
-movingwindow <- function(data, cte=TRUE, fixed=TRUE, nint=3){
 
-  n <- nrow(data)
-  int <- round(n/nint)
+windowindexs <- function(cte=TRUE, fixed = TRUE, nint = 3){
 
-  if(cte & fixed){
+  indexs <- list()
 
-    for(i in 1:nint){
+  for(i in 1:nint){
 
-
-    }
-
-    data[['interval']] <- a
-
-  }else if(cte){
-
-    print(2)
-
-  }else{
-
-    print(3)
+    aux<- c(1:)
 
   }
 
