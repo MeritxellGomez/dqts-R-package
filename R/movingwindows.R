@@ -1,6 +1,6 @@
 
 
-wdwind <- function(n_data, cte=TRUE, fixed = TRUE, nint = 3, by = 10){
+wdwind <- function(n_data, cte, fixed, nint, by){
 
   n <- trunc(n_data/nint)
 
@@ -49,18 +49,26 @@ wdwind <- function(n_data, cte=TRUE, fixed = TRUE, nint = 3, by = 10){
 }
 
 
-segwdw <- function(data, cte=TRUE, fixed = TRUE, nint = 3, by = 10){
-
-  n <- nrow(data)
+segwdw <- function(data, ind){
 
   #funcion que utilizando la anterior wdwind devuelva tantos dataframes como particiones se hayan hecho
   #estos dataframes tendran elementos cuyos indices son el output de la funcion wdwind
 
+  n <- nrow(data)
+  l_i <- length(ind)
+
+  dfs <- list()
+
+  for(i in 1:l_i){
+
+    dfs[[i]] <- data[ind[[i]],]
+
+  }
+
+  return(dfs)
 
 }
 
 
-#esto devuelve las metricas de calidad para cada mini dataframe
-#segdf es el output de la funcion segwdw
 
-#do.call(rbind(lapply(segdf, quality)))
+
