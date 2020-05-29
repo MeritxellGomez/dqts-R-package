@@ -1,15 +1,66 @@
 
 
-windowindexs <- function(cte=TRUE, fixed = TRUE, nint = 3){
+wdwind <- function(n_data, cte=TRUE, fixed = TRUE, nint = 3, by = 10){
 
-  indexs <- list()
+  n <- trunc(n_data/nint)
 
-  for(i in 1:nint){
+  indexs <- vector(mode="list", length = nint)
 
-    aux<- c(1:)
+  if(cte & fixed){
+
+    #ventanas fijas (intervalos)
+
+    n_ini<-1
+    n_fin <- n
+
+    for (i in 1:nint){
+
+      aux <- c(n_ini : n_fin)
+
+      indexs[[i]] <- aux
+
+      n_ini <- n_fin+1
+      n_fin <- n_fin +n
+
+    }
+
+  }else{
+
+    n_ini <- 1
+    n_fin <- n_data - ((nint-1) * by)
+
+    for (i in 1:nint){
+
+      aux <- c(n_ini : n_fin)
+
+      indexs[[i]] <- aux
+
+      n_fin <- n_fin + by
+      if(cte){
+        n_ini <- n_ini + by
+      }
+
+    }
 
   }
+
+  return(indexs)
 
 }
 
 
+segwdw <- function(data, cte=TRUE, fixed = TRUE, nint = 3, by = 10){
+
+  n <- nrow(data)
+
+  #funcion que utilizando la anterior wdwind devuelva tantos dataframes como particiones se hayan hecho
+  #estos dataframes tendran elementos cuyos indices son el output de la funcion wdwind
+
+
+}
+
+
+#esto devuelve las metricas de calidad para cada mini dataframe
+#segdf es el output de la funcion segwdw
+
+#do.call(rbind(lapply(segdf, quality)))
