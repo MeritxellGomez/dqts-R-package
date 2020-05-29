@@ -37,17 +37,27 @@ deepTimeliness <- function(data, columnDate, maxdif, missing=FALSE){
 
 #hay que hacer una función que agrupe los datos teniendo en cuenta la fecha. Cada 30 minutos que haga una media de la temperatura
 
-# agg <- function(data, var_time_name, m){
-#
-#   first <- data[[var_time_name]][1]
-#   last <- data[[var_time_name]][nrow(data)]
-#
-#   h <- (last - first)/m
-#
-#   for (i in 1:h){
-#
-#     data[]
-#
-#   }
-#
-# }
+agg <- function(data, var_time_name, m){
+  browser()
+  data <- data %>% mutate('aggregateDate' = 1)
+
+  first <- data[[var_time_name]][1]
+  print(class(first))
+  last <- first + m
+
+
+  for(i in 1:3){
+
+    ind <- which(first <= data[[var_time_name]] & data[[var_time_name]] < last)
+
+    data['aggregateDate'][ind] <- first #no consigo que copie bien la fecha... le cambia el formato
+
+
+  first <- last
+  last <- last + m
+
+  }
+
+  return(data)
+
+}
