@@ -175,8 +175,10 @@ Timeliness<-function(data, columnDate, maxdif){
 
 Conformity<-function(data, dataref=NULL){
 
-  if(is.null(dataref)){conformity<-0}
-  if(is.null(dataref)) warning('Reference data frame should be given')
+  if(is.null(dataref)){
+    warning('Reference data frame should be given')
+    conformity<-0
+  }else{
 
   formats <- lapply(data, class)
   formatsref <- lapply(dataref, class)
@@ -186,14 +188,16 @@ Conformity<-function(data, dataref=NULL){
   identicals <- length(which(unlist(formats) == unlist(formatsref)))
 
   conformity <- identicals/length(unlist(formats))*100
+  }
 
   return(conformity)
+
 }
 
 
 # Quality -----------------------------------------------------------------
 
-quality<-function(data, columnDate, maxdif, dataref=NULL, ranges=NULL, weights=NULL){
+quality<-function(data, columnDate, maxdif, dataref, ranges=NULL, weights=NULL){
 
   if(is.null(weights)){
     weights<-c(rep(0.1,10))
