@@ -1,6 +1,6 @@
 #####QUALITY FUNCTION#####
 
-DQ <- function(data, columnDate, maxdif, dataref = NULL, ranges = NULL, weights = NULL, windows=FALSE, cte=TRUE, fixed=TRUE, nint=3, by=10){
+DQ <- function(data, columnDate, maxdif, dataref, ranges = NULL, weights = NULL, windows=FALSE, cte=TRUE, fixed=TRUE, nint=3, by=10){
 
   if(is.null(columnDate)){
 
@@ -27,7 +27,7 @@ DQ <- function(data, columnDate, maxdif, dataref = NULL, ranges = NULL, weights 
 
     minidf <- data %>% nrow() %>% wdwind(., cte, fixed, nint, by) %>% segwdw(data,.)
 
-    myquality <- do.call(rbind,lapply(minidf, function(x) quality(x, columnDate = 1, maxdif = 30, dataref=NULL, ranges=NULL, weights=NULL)))
+    myquality <- do.call(rbind,lapply(minidf, function(x) quality(x, columnDate, maxdif, dataref, ranges, weights)))
 
   }
 
