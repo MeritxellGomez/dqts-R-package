@@ -193,7 +193,7 @@ Conformity<-function(data, dataref=NULL){
 
 # Quality -----------------------------------------------------------------
 
-quality<-function(data, columnDate, maxdif, dataref, ranges=NULL, weights=NULL){
+quality<-function(data, columnDate, maxdif, dataref=NULL, ranges=NULL, weights=NULL){
 
   if(is.null(weights)){
     weights<-c(rep(0.1,10))
@@ -221,7 +221,7 @@ quality<-function(data, columnDate, maxdif, dataref, ranges=NULL, weights=NULL){
               w[4]*tuni + w[5]*range + w[6]*cons +
               w[7]*typ + w[8]*mod + w[9]*time + w[10]*conf)
 
-  return(data.frame(Completeness = comp, CompletenessObservations = compobv,
+  return(data.frame(InitialDate = data[1,columnDate], FinalDate = data[nrow(data), columnDate], Completeness = comp, CompletenessObservations = compobv,
               CompletenessVariables = compvar, TimeUniqueness = tuni,
               Range = range, Consistency = cons, Typicality = typ,
               Moderation = mod, Timeliness = time, Conformity = conf,
