@@ -28,3 +28,26 @@ deepTimeliness <- function(data, columnDate, maxdif, missing=FALSE){
   return(df.timeliness)
 
 }
+
+
+
+
+
+# aggregate ---------------------------------------------------------------
+
+#hay que hacer una función que agrupe los datos teniendo en cuenta la fecha. Cada 30 minutos que haga una media de la temperatura
+
+# agg <- function(data, var_time_name, m){
+#
+#   first <- data[[var_time_name]][1]
+#   last <- data[[var_time_name]][nrow(data)]
+#
+#   h <- (last - first)/m
+#
+#   for (i in 1:h){
+#
+#     data[]
+#
+#   }
+#
+# }
