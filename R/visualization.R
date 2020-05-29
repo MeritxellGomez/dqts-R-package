@@ -1,7 +1,7 @@
 
 #barplot para salida de DQ cuando no hay ventanas. Calidad TOTAL
 qualitybarplot <- function(DQ, totalquality = FALSE){
-  browser()
+
   if(totalquality==FALSE){DQ<-DQ[-length(DQ)]}
 
   df.quality <- data.frame(id=seq(1,length(DQ)),
