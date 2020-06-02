@@ -19,7 +19,7 @@ deepTimeliness <- function(data, columnDate=NULL, var_time_name=NULL, maxdif, un
   }
 
   date_vec <- data[[var_time_name]]
-  dif <- diff(datevec)
+  dif <- diff(date_vec)
 
   pos <- which(dif>maxdif)
 
@@ -37,6 +37,16 @@ deepTimeliness <- function(data, columnDate=NULL, var_time_name=NULL, maxdif, un
   return(df.timeliness)
 
 }
+
+
+#el input es la salida de un deepTimeliness y el numero de perdidas que se quieren mostrar
+#ordena las perdidas temporales de mayor a menor
+bigMissingTimes <- function(dT, n=1){
+
+  dT %>% dplyr::arrange(desc(waiting.time)) %>% head(n)
+
+}
+
 
 
 
