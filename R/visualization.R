@@ -4,6 +4,9 @@ qualitybarplot <- function(DQ, totalquality = FALSE){
 
   if(totalquality==FALSE){DQ<-DQ[-length(DQ)]}
 
+  #delete date variables
+  DQ <- DQ[,-c(1:2)]
+
   df.quality <- data.frame(id=seq(1,length(DQ)),
                            metric = names(DQ),
                            score = unlist(DQ), stringsAsFactors = FALSE)
