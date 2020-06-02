@@ -58,6 +58,8 @@ generateRangeData <- function(data){
 
   mysample <- data[sample(nrow(data), round(0.4*nrow(data))),]
 
+  mysample[, sapply(mysample, is.factor)] <- sapply(mysample[,sapply(mysample, is.factor)], as.character)
+
   mins <- lapply(mysample, min)
 
   maxs <- lapply(mysample, max)
