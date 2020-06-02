@@ -6,7 +6,7 @@ Completeness<-function(data){
   nc<-ncol(data)
   ncl<-nr*nc
   ic<-length(which(is.na(data)))
-  comp<-(1-ic/ncl)*100
+  comp<-1-ic/ncl
 
   return(comp)
 }
@@ -16,9 +16,9 @@ CompletenessObservations<- function(data){
   a<-apply(data, 1, function(x) length(which(is.na(x))))
   nr<-nrow(data)
   nic<-length(which(a==ncol(data)))
-  compobv=(1-nic/nr)*100
+  compobv=1-nic/nr
 
-  if(compobv!=100) warning('One or more rows may be empty.')
+  if(compobv!=1) warning('One or more rows may be empty.')
 
   return(compobv)
 }
@@ -28,9 +28,9 @@ CompletenessVariables<- function(data){
   a<-apply(data, 2, function(x) length(which(is.na(x))))
   nc<-ncol(data)
   nic<-length(which(a==nrow(data)))
-  compvar=(1-nic/nc)*100
+  compvar=1-nic/nc
 
-  if(compvar!=100) warning('One or more columns may be empty')
+  if(compvar!=1) warning('One or more columns may be empty')
 
   return(compvar)
 }
@@ -47,7 +47,7 @@ TimeUniqueness <- function(data, columnDate){
 
   if(is.numeric(columnDate)==FALSE) stop('columnDate may be numeric')
 
-  length(unique(data[,columnDate]))*100 / length(data[,columnDate])
+  length(unique(data[,columnDate])) / length(data[,columnDate])
 
 }
 
@@ -78,7 +78,7 @@ Range<-function(data, ranges=NULL){
   check<-list()
   for (i in 1:ncol(data)){
     if(is.numeric(data[,i])){
-      auxcheck<-(length(which(data[,i]>=ranges[1,i] & data[,i]<=ranges[2,i])))*100/length(data[,i])
+      auxcheck<-(length(which(data[,i]>=ranges[1,i] & data[,i]<=ranges[2,i])))/length(data[,i])
       check<-c(check, auxcheck) #lista de porcentajes de valores estan dentro del rango en cada variable
     }
   }
@@ -101,7 +101,7 @@ consistent<-function(variable){
   upper<-which(variable>M)
 
   incons<-length(lower)+length(upper)
-  return((1-(incons/length(variable)))*100)
+  return(1-(incons/length(variable)))
 }
 
 Consistency<-function(data){
@@ -126,7 +126,7 @@ typical<-function(variable){
 
   atip<-length(lower)+length(upper)
 
-  return((1-(atip/length(variable)))*100)
+  return(1-(atip/length(variable)))
 }
 
 Typicality<-function(data){ #aplica función atípicos a todas las variables (columnas) de data
@@ -150,7 +150,7 @@ moderate<-function(variable){
 
   extr<-length(lower)+length(upper)
 
-  return((1-(extr/length(variable)))*100)
+  return(1-(extr/length(variable)))
 }
 
 Moderation<-function(data){ #aplica función extremos a todas las variables (columnas) de data
@@ -167,7 +167,7 @@ Timeliness<-function(data, columnDate, maxdif){
 
   outdif<-length(which(dif>maxdif))
 
-  return((1-(outdif/length(dif)))*100)
+  return(1-(outdif/length(dif)))
 }
 
 
@@ -187,7 +187,7 @@ Conformity<-function(data, dataref=NULL){
 
   identicals <- length(which(unlist(formats) == unlist(formatsref)))
 
-  conformity <- identicals/length(unlist(formats))*100
+  conformity <- identicals/length(unlist(formats))
   }
 
   return(conformity)
