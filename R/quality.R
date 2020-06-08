@@ -1,5 +1,9 @@
-#####QUALITY FUNCTION#####
-
+#' Data quality from a data set
+#'
+#' Takes a data set and the conditions to compute the data quality and returns the values of all metrics
+#' @param data A data frame to be analyzed
+#' @return A data frame containing the values of all quality metrics in columns
+#' @export
 DQ <- function(data, columnDate, maxdif, dataref, ranges = NULL, weights = NULL, windows=FALSE, cte=TRUE, fixed=TRUE, nint=3, by=10){
 
   if(is.null(columnDate)){
