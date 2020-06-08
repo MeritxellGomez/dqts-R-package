@@ -83,6 +83,18 @@ agg <- function(data, var_time_name, m){
 
   data[['dateAggregated']][(max(ind) + 1) : nrow(data)] <- firstaux + m
 
+  ind28 <- which(lubridate::minute(data$dateAggregated) == 28)
+  lubridate::minute(data$dateAggregated[ind28]) <- 05
+  lubridate::minute(data$dateAggregated[-ind28]) <- 35
+
+  data <- data[,3:2]
+
+  data <- aggregate(data,
+                    by = list(data$dateAggregated),
+                    FUN = mean)
+
+  data <- data[, 2:3]
+
   return(data)
 
 }
