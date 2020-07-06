@@ -28,10 +28,25 @@ movDQplot <- function(movingDQ, totalquality=FALSE){
 
   d <- melt(movingDQ, id.vars=c("InitialDate", "FinalDate"))
 
+  library(ggplot2)
+
   ggplot(d, aes(FinalDate,value, col=variable)) +
     geom_line() +
     theme_minimal() +
     theme(axis.text.x = element_text(angle = 90))
 }
 
+plot <- function(DQ, totalquality = FALSE){
 
+  if(nrow(DQ) == 1){
+
+    qualitybarplot(DQ, totalquality)
+
+  }else{
+
+    movDQplot(DQ, totalquality)
+
+  }
+
+
+}
