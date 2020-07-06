@@ -6,9 +6,9 @@
 \usage{
 DQ(
   data,
-  columnDate,
-  maxdif,
-  dataref,
+  columnDate = NULL,
+  maxdif = NULL,
+  dataref = NULL,
   ranges = NULL,
   weights = NULL,
   windows = FALSE,
