@@ -1,5 +1,3 @@
-
-#barplot para salida de DQ cuando no hay ventanas. Calidad TOTAL
 qualitybarplot <- function(DQ, totalquality = FALSE){
 
   if(totalquality==FALSE){DQ<-DQ[-length(DQ)]}
@@ -21,7 +19,6 @@ qualitybarplot <- function(DQ, totalquality = FALSE){
   return(g)
 }
 
-#gráfico cuando hay ventanas en DQ
 movDQplot <- function(movingDQ, totalquality=FALSE){
 
   library(reshape2)
@@ -36,7 +33,14 @@ movDQplot <- function(movingDQ, totalquality=FALSE){
     theme(axis.text.x = element_text(angle = 90))
 }
 
-plot <- function(DQ, totalquality = FALSE){
+
+#' Plot data quality metrics
+#'
+#' Takes a data quality fata frame and plot the values of the metrics
+#' @param DQ A data frame with quality metrics as columns
+#' @return Plot of the quality metric values
+#' @export
+plot.quality <- function(DQ, totalquality = FALSE){
 
   if(nrow(DQ) == 1){
 
