@@ -1,6 +1,6 @@
 ###crear una función que lea los datos y la métrica a corregir y aplique en cada caso la función que deba
 
-handle_DQ <- function(data, metric, var_time_name){
+handle_DQ <- function(data, metric, var_time_name=NULL){
 
   if(metric == "Completeness"){HLCompleteness(data)}
   else if(metric == "TimeUniqueness"){HLTimeUniqueness(data, var_time_name)}
@@ -10,7 +10,7 @@ handle_DQ <- function(data, metric, var_time_name){
   else if(metric == 'Moderation'){HLModeration(data)}
   else if(metric == "Timeliness"){HLTimeliness(data)}
   else if(metric == "Conformity"){HLConformity(data)}
-  else(return(paste('Incorrect metric name')))
+  else(stop('Incorrect metric name'))
 
 }
 
@@ -18,6 +18,8 @@ handle_DQ <- function(data, metric, var_time_name){
 # Handling Low Completeness -----------------------------------------------
 
 HLCompleteness <- function(data){
+
+
 
   #identificar la cantidad de NA's
 
@@ -32,6 +34,9 @@ HLCompleteness <- function(data){
 # Handling Time Uniqueness ------------------------------------------------
 
 HLTimeUniqueness <- function(data, var_time_name){
+
+  if(is.null(var_time_name)){stop('Incorrect time variable name. The name of the time variable have to be written as an argument')}
+  if(isFALSE(var_time_name %in% colnames(data))){stop('Incorrect time variable name. The name entered does not match any variable in the data set')}
 
   dupl <- duplicated(data[[var_time_name]])
 
