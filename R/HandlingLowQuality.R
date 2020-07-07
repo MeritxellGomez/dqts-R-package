@@ -88,7 +88,7 @@ HLTimeliness <- function(data, var_time_name, maxdif, units){
   }else if(units == "secs"){
     step <- maxdif
   }else{
-    stop("incorrect units")
+    stop("Incorrect time unit. The options are: mins, days and secs")
   }
 
   #mirar cuando timeliness es mayor que maxdif
