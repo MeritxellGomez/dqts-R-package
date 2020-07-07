@@ -43,7 +43,7 @@ movDQplot <- function(movingDQ, totalquality=FALSE){
 #'
 #' @return Plot of the quality metric values
 #' @export
-plotquality <- function(DQ, totalquality = FALSE){
+dqplot <- function(DQ, totalquality = FALSE){
 
   if(nrow(DQ) == 1){
 
@@ -54,6 +54,5 @@ plotquality <- function(DQ, totalquality = FALSE){
     movDQplot(DQ, totalquality)
 
   }
-
 
 }
