@@ -1,7 +1,19 @@
 #' Data quality from a data set
 #'
-#' Takes a data set and the conditions to compute the data quality and returns the values of all metrics
-#' @param data A data frame to be analyzed
+#' Takes a data set and the conditions to compute the data quality and returns the values of all metrics (Completeness, Completeness Observations, Completeness Variables, Time Uniqueness, Range, Consistency, Typicality, Moderation, Timeliness, Conformity) and the general value of data quality
+#'
+#' @param columnDate A number indicating in which column the date variable is
+#' @param maxdif The maximum difference allowed between two consecutive dates
+#' @param dataref A data frame with the correct format to compare the current data
+#' @param ranges A data frame containing the minimum and maximum value allowed to each variable
+#' @param weights A vector of length 10 indicating the weights to compute the weighted average
+#' @param windows Logical argument. If TRUE the metrics will be calculated by windows
+#' @param cte Logical argument. If TRUE the length of the windows will be the same
+#' @param fixed Logical argument. If TRUE the initial value of each window is the same.
+#' @param nint The number of windows
+#' @param by The time difference between the initial value of each window
+#' @param data The data frame to be analyzed
+#'
 #' @return A data frame containing the values of all quality metrics in columns
 #' @importFrom magrittr %>%
 #' @export
