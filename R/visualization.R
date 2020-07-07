@@ -36,11 +36,14 @@ movDQplot <- function(movingDQ, totalquality=FALSE){
 
 #' Plot data quality metrics
 #'
-#' Takes a data quality fata frame and plot the values of the metrics
+#' Takes a data quality data frame and plot the values of the metrics
+#'
+#' @param totalquality Logical argument. If TRUE the global data quality is added with the other metrics
 #' @param DQ A data frame with quality metrics as columns
+#'
 #' @return Plot of the quality metric values
 #' @export
-plot.quality <- function(DQ, totalquality = FALSE){
+plotquality <- function(DQ, totalquality = FALSE){
 
   if(nrow(DQ) == 1){
 
