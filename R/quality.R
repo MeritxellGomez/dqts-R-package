@@ -19,6 +19,8 @@
 #' @export
 DQ <- function(data, columnDate = NULL, maxdif = NULL, dataref = NULL, ranges = NULL, weights = NULL, windows=FALSE, cte=TRUE, fixed=TRUE, nint=3, by=10){
 
+  if(class(data) == 'ts'){data <- convertToDataFrame(data)}
+
   if(is.null(columnDate)){
     n <- length(which(sapply(data, class)=='Date'))
     if(n==1){
