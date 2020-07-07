@@ -19,11 +19,31 @@ DQ(
 )
 }
 \arguments{
-\item{data}{A data frame to be analyzed}
+\item{data}{The data frame to be analyzed}
+
+\item{columnDate}{A number indicating in which column the date variable is}
+
+\item{maxdif}{The maximum difference allowed between two consecutive dates}
+
+\item{dataref}{A data frame with the correct format to compare the current data}
+
+\item{ranges}{A data frame containing the minimum and maximum value allowed to each variable}
+
+\item{weights}{A vector of length 10 indicating the weights to compute the weighted average}
+
+\item{windows}{Logical argument. If TRUE the metrics will be calculated by windows}
+
+\item{cte}{Logical argument. If TRUE the length of the windows will be the same}
+
+\item{fixed}{Logical argument. If TRUE the initial value of each window is the same.}
+
+\item{nint}{The number of windows}
+
+\item{by}{The time difference between the initial value of each window}
 }
 \value{
 A data frame containing the values of all quality metrics in columns
 }
 \description{
-Takes a data set and the conditions to compute the data quality and returns the values of all metrics
+Takes a data set and the conditions to compute the data quality and returns the values of all metrics (Completeness, Completeness Observations, Completeness Variables, Time Uniqueness, Range, Consistency, Typicality, Moderation, Timeliness, Conformity) and the general value of data quality
 }
