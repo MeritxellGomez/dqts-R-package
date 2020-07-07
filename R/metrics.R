@@ -39,7 +39,7 @@ CompletenessVariables<- function(data){
 # Uniqueness --------------------------------------------------------------
 
 # Uniqueness <- function(data){
-#
+# create uniqueness function to assess the uniqueness in other variables. Not necessary in time series.
 #
 # }
 
@@ -69,13 +69,7 @@ generateRangeData <- function(data){
   return(df)
 }
 
-Range<-function(data, ranges=NULL){
-
-  if(is.null(ranges)){
-
-    ranges <- generateRangeData(data)
-
-  }
+Range<-function(data, ranges){
 
   check<-list()
   for (i in 1:ncol(data)){
@@ -175,12 +169,7 @@ Timeliness<-function(data, columnDate, maxdif){
 
 # Conformity --------------------------------------------------------------
 
-Conformity<-function(data, dataref=NULL){
-
-  if(is.null(dataref)){
-    warning('Reference data frame should be given')
-    conformity<-0
-  }else{
+Conformity<-function(data, dataref){
 
   formats <- lapply(data, class)
   formatsref <- lapply(dataref, class)
@@ -190,7 +179,6 @@ Conformity<-function(data, dataref=NULL){
   identicals <- length(which(unlist(formats) == unlist(formatsref)))
 
   conformity <- identicals/length(unlist(formats))
-  }
 
   return(conformity)
 
