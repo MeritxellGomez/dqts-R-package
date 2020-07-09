@@ -17,15 +17,79 @@ handle_DQ <- function(data, metric, var_time_name=NULL){
 
 # Handling Low Completeness -----------------------------------------------
 
+idlist <- function(idvec){
+
+  idbreak <- which(diff(idvec) > 1)
+  idbreak <- c(idbreak, length(idvec))
+  n <- length(idbreak)
+
+  idlist <- list()
+
+  from <- 1
+
+  for(i in 1:n){
+
+    idlist[[i]] <- idvec[from:idbreak[i]]
+    from <- idbreak[i] + 1
+
+  }
+
+  return(idlist)
+
+}
+
+imputation <- function(var,idna){
+
+  last <- min(idna) - 1
+
+  trainset <- var[1:last]
+
+  #imputation por la media
+  estim <- rep(mean(trainset, na.rm = TRUE), length(idna))
+
+  return(estim)
+
+}
+
+imputena <- function(var){
+
+  idna <- which(is.na(var))
+  idnalist <- idlist(idna)
+
+  estim <- lapply(idnalist, function(x)imputation(var, x))
+
+  #estim va a ser una lista donde cada elemento es la estimacion de esos indices de NA
+
+
+
+  #repetir el proceso para cada intervalo de NA de la serie
+  #devolver una lista con los vectores de predicciones de length el numero de NA seguidos
+  return(estim)
+
+}
+
 HLCompleteness <- function(data){
 
+  nacol <- apply(data, 2, function(x) sum(is.na(x)))
 
+  #hay que añadir la condicion de que solo mire para las columnas numericas.
+  #Alternativa: buscar forma de imputar fechas, factors, characters, ...
 
-  #identificar la cantidad de NA's
+  imputation <- apply(data[which(nacol != 0)], 2, imputena)
 
-  #imputar los NA's
+  nvar <- length(which(nacol != 0))
 
-  #devolver el data con los NA imputados
+  for(i in 1:nvar){
+    nsub <- length(imputation[[i]])
+    ind <- which(is.na(data[[names(imputation[i])]]))
+    indexs <- idlist(ind)
+
+    for(j in 1:nsub){
+    data[[names(imputation[i])]][indexs[[j]]] <- imputation[[i]][[j]]
+    }
+  }
+
+  return(imputation)
 
 }
 
