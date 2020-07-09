@@ -2,4 +2,5 @@
 
 export(DQ)
 export(dqplot)
+export(handle_DQ)
 importFrom(magrittr,"%>%")
