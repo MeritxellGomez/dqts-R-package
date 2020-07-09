@@ -1,10 +1,24 @@
-###crear una función que lea los datos y la métrica a corregir y aplique en cada caso la función que deba
 
-handle_DQ <- function(data, metric, var_time_name=NULL){
+#' Handle low data quality
+#'
+#' This function allows to correct the low data quality of one of the metrics. Once the process is done, it returns the data frame with some values modified. Do, the new value for the metric chosen is 1.
+#'
+#' @param data The data frame with low data quality to be corrected
+#' @param metric the name of the metric to be corrected
+#' @param var_time_name optional name of the time variable
+#' @param ranges A data frame containing the minimum and maximum value allowed to each variable
+#'
+#' @return the data frame with the low quality values corrected
+#' @export
+#'
+#' @examples
+handle_DQ <- function(data, metric, var_time_name=NULL, ranges = NULL){
+
+  if(class(data) == 'ts'){data <- tsbox::ts_df(data)}
 
   if(metric == "Completeness"){HLCompleteness(data)}
   else if(metric == "TimeUniqueness"){HLTimeUniqueness(data, var_time_name)}
-  else if(metric == 'Range'){HLRange(data)}
+  else if(metric == 'Range'){HLRange(data, ranges)}
   else if(metric == 'Consistency'){HLConsistency(data)}
   else if(metric == 'Typicality'){HLTypicality(data)}
   else if(metric == 'Moderation'){HLModeration(data)}
@@ -38,25 +52,27 @@ idlist <- function(idvec){
 
 }
 
-imputation <- function(var,idna){
+imputation <- function(var,method, idna){
 
   last <- min(idna) - 1
 
   trainset <- var[1:last]
 
-  #imputation por la media
+  if(method == "mean"){
   estim <- rep(mean(trainset, na.rm = TRUE), length(idna))
+  }
 
   return(estim)
 
 }
 
-imputena <- function(var){
+
+imputena <- function(method, var){
 
   idna <- which(is.na(var))
   idnalist <- idlist(idna)
 
-  estim <- lapply(idnalist, function(x)imputation(var, x))
+  estim <- lapply(idnalist, function(x)imputation(var, method, x))
 
   #estim va a ser una lista donde cada elemento es la estimacion de esos indices de NA
 
@@ -68,14 +84,14 @@ imputena <- function(var){
 
 }
 
-HLCompleteness <- function(data){
+HLCompleteness <- function(data, method="mean"){
 
   nacol <- apply(data, 2, function(x) sum(is.na(x)))
 
   #hay que añadir la condicion de que solo mire para las columnas numericas.
   #Alternativa: buscar forma de imputar fechas, factors, characters, ...
 
-  imputation <- apply(data[which(nacol != 0)], 2, imputena)
+  imputation <- apply(data[which(nacol != 0)], 2, function(x) imputena(method, x))
 
   nvar <- length(which(nacol != 0))
 
@@ -89,7 +105,7 @@ HLCompleteness <- function(data){
     }
   }
 
-  return(imputation)
+  return(data)
 
 }
 
@@ -114,14 +130,19 @@ HLTimeUniqueness <- function(data, var_time_name){
 
 # Handling Low Range ------------------------------------------------------
 
-HLRange <- function(data){
+HLRange <- function(data, ranges=NULL){
 
-  #coger los elementos que estan fuera de rango
+  if(is.null(ranges)){ranges <- generateRangeData(data)}
 
-  #opciones : eliminarlos, imputarlos por la media, imputarlos por max/min permitido segun si sobrepasan o no
+  listout <- isoutofrange(data, ranges)
 
-  #devolver los datos limpios
+  ind <- c(1:length(listout))[sapply(listout, function(x) !is.null(x))]
 
+  for (i in ind){
+    data[listout[[i]],i] <- mean(data[-c(listout[[i]]),i], na.rm = TRUE)
+  }
+
+  return(data)
 }
 
 
@@ -138,6 +159,24 @@ HLConsistency <- function(data){
 }
 
 
+# Handling Low Typicality -------------------------------------------------
+
+HLTypicality <- function(data){
+
+  #lo mismo que con Range.
+
+}
+
+# Handling Low Moderation -------------------------------------------------
+
+HLModeration <- function(data){
+
+  #lo mismo que con Range.
+
+}
+
+
+
 # Handling Low Timeliness -------------------------------------------------
 
 HLTimeliness <- function(data, var_time_name, maxdif, units){
@@ -152,7 +191,7 @@ HLTimeliness <- function(data, var_time_name, maxdif, units){
   }else if(units == "secs"){
     step <- maxdif
   }else{
-    stop("Incorrect time unit. The options are: mins, days and secs")
+    stop('units should be one of mins, days, secs')
   }
 
   #mirar cuando timeliness es mayor que maxdif
