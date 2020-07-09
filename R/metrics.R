@@ -60,25 +60,36 @@ generateRangeData <- function(data){
 
   mysample[, sapply(mysample, is.factor)] <- sapply(mysample[,sapply(mysample, is.factor)], as.character)
 
-  mins <- lapply(mysample, min)
+  mins <- lapply(mysample, function(x) min(x, na.rm = TRUE))
 
-  maxs <- lapply(mysample, max)
+  maxs <- lapply(mysample, function(x) max(x, na.rm = TRUE))
 
   df<- rbind(data.frame(mins), data.frame(maxs))
 
   return(df)
 }
 
-Range<-function(data, ranges){
+isoutofrange <- function(data, ranges){
 
   check<-list()
   for (i in 1:ncol(data)){
     if(is.numeric(data[,i])){
-      auxcheck<-(length(which(data[,i]>=ranges[1,i] & data[,i]<=ranges[2,i])))/length(data[,i])
-      check<-c(check, auxcheck) #lista de porcentajes de valores estan dentro del rango en cada variable
+
+      aux<-which(data[,i] < ranges[1,i] | data[,i] > ranges[2,i])
+      check[[i]] <- aux
     }
   }
-  return(sum(as.numeric(check))/length(check))
+  return(check)
+}
+
+Range<-function(data, ranges){
+
+  out <- isoutofrange(data, ranges)
+  totalout <- length(unlist(out))
+  n<- length(which(!is.na(data)))
+
+  #ratio to different NA elements
+  return(1 - (totalout / n))
 }
 
 
