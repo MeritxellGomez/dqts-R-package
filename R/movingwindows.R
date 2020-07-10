@@ -1,5 +1,5 @@
 
-
+#data quality
 wdwind <- function(n_data, cte, fixed, nint, by){
 
   n <- trunc(n_data/nint)
@@ -69,6 +69,108 @@ segwdw <- function(data, ind){
 
 }
 
+#imputation
 
+d_euclidean <- function(vec_x, vec_y){
+
+  d <- sqrt(sum((vec_x - vec_y)^2))
+
+  return(d)
+
+}
+
+
+#funcion que de un data frame salido de la funcion distance_knn (ordenado), escoger los k más cercanos
+kneighbors <- function(distk, k){
+
+  kneig <- distk[1:k,]
+
+  return(kneig)
+
+}
+
+
+#funcion que calcula la distancia entre los datos que se introducen (VECTOR) y
+#todos los intervalos anteriores. Devuelve df con 3 cols: initialindex, finalindex, distancevalue
+#future = TRUE permite usar datos futuros
+distance_knn <- function(datavar, idna = idna, h, npred, dist = "Euclidean", future = TRUE){
+
+  firstna <- min(idna)
+
+  #horizon data to be compared
+  h_data <- datavar[(firstna - h) : (firstna - 1)]
+
+  #built dataframe to be written
+  dfdist <- data.frame(initial.value = integer(), final.value = integer(), distances = double(), stringsAsFactors = FALSE)
+
+
+  #look for the distances with previous data
+  initial1_f <- firstna - h - npred
+
+  for (i in 1:initial1_f){
+
+    int <- datavar[i:(i+h-1)]
+
+    d_aux <- d_euclidean(int, h_data)
+
+    dfdist[i,] <- data.frame(initial.value = i, final.value = i+h-1, distances = d_aux)
+
+  }
+
+  #if future == TRUE, look for the distances with future data
+  if(future){
+
+    initial2_0 <- max(idna) + 1
+    initial2_f <- length(datavar) - h - npred + 1
+    j <- 1
+
+    for(i in initial2_0:initial2_f){
+
+      int <- datavar[i:(i+h-1)]
+
+      d_aux <- d_euclidean(int, h_data)
+
+      dfdist[initial1_f+j,] <- data.frame(initial.value = i, final.value = i+h-1, distances = d_aux)
+
+      j<-j+1
+
+    }
+
+  }
+
+
+  library(dplyr)
+  dfdist <- dfdist %>% arrange(distances)
+
+  return(dfdist)
+
+}
+
+
+predictknn<-function(datavar, kneighbors, npred, pond){
+
+  nearest.neighbors <- kneighbors[['final.value']]
+
+  k<-nrow(kneighbors)
+
+  m <- matrix(, nrow = k, ncol = npred)
+
+  #align the values of the neighbors
+  for (i in 1:k){
+    m[i,] <- datavar[(nearest.neighbors[i]+1) : (nearest.neighbors[i]+npred)]
+  }
+
+  #weighted average
+  if(pond){
+    w <- (1/(kneighbors[['distances']])^2)
+    nw <- w/(sum(w))
+    pred <- (nw %*% m)
+  }else{
+    pred <- apply(m, 2, mean)
+  }
+
+  return(pred)
+
+}
 
 
