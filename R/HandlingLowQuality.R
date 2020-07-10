@@ -12,17 +12,17 @@
 #' @export
 #'
 #' @examples
-handle_DQ <- function(data, metric, columnDate = NULL, ranges = NULL, method = "mean"){
+handle_DQ <- function(data, metric, columnDate = NULL, var_time_name=NULL, ranges = NULL, method = "mean", maxdif = NULL, units = NULL){
 
   if(class(data) == 'ts'){data <- tsbox::ts_df(data)}
 
   if(metric == "Completeness"){HLCompleteness(data, method)}
-  else if(metric == "TimeUniqueness"){HLTimeUniqueness(data, columnDate)}
+  else if(metric == "TimeUniqueness"){HLTimeUniqueness(data, var_time_name)}
   else if(metric == 'Range'){HLRange(data, ranges)}
   else if(metric == 'Consistency'){HLConsistency(data)}
   else if(metric == 'Typicality'){HLTypicality(data)}
   else if(metric == 'Moderation'){HLModeration(data)}
-  else if(metric == "Timeliness"){HLTimeliness(data, columnDate)}
+  else if(metric == "Timeliness"){HLTimeliness(data, columnDate, maxdif, units)}
   else if(metric == "Conformity"){HLConformity(data)}
   else(stop('Incorrect metric name'))
 
@@ -55,11 +55,9 @@ idlist <- function(idvec){
 imputation <- function(var,method, idna){
 
   if(method == "mean"){
-    last <- min(idna) - 1
-    trainset <- var[1:last]
-    estim <- rep(mean(trainset, na.rm = TRUE), length(idna))
+    estim <- impmean(var = var, idna = idna)
   }else if(method == "KNPTS"){
-    estim <- impKNPTS(var = var, idna = idna)
+    estim <- impKNPTS(var = var, idna = idna, future = TRUE)
   }else{
     estim <- 0
   }
@@ -181,7 +179,9 @@ HLModeration <- function(data){
 
 # Handling Low Timeliness -------------------------------------------------
 
-HLTimeliness <- function(data, var_time_name, maxdif, units){
+HLTimeliness <- function(data, columnDate, maxdif, units){
+
+  var_time_name <- colnames(data)[columnDate]
 
   first_date <- data[[var_time_name]][1]
   last_date <- data[[var_time_name]][nrow(data)]
