@@ -1,4 +1,23 @@
-impKNPTS<-function(var, idna){
+
+impmean<- function(var, idna, future = TRUE){
+
+  last <- min(idna) - 1
+  trainset <- var[1:last]
+
+  if(future){
+    trainset <- c(trainset, var[(max(idna)+1) : length(var)])
+  }
+
+  pred <- rep(mean(trainset, na.rm = TRUE), length(idna))
+
+  return(pred)
+
+}
+
+
+
+
+impKNPTS<-function(var, idna, future = TRUE){
 
   npred <- length(idna)
 
