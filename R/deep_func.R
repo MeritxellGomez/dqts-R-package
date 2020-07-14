@@ -1,7 +1,16 @@
 
 #in-depth quality analysis
 
+deepDQ <- function(data, metric, var_time_name, position = FALSE){
 
+  if(metric == "Completeness"){deepdf <- deepCompleteness(data, var_time_name, position)}
+  if(metric == "Timeliness"){deepdf <- deepTimeliness(data, columnDate=NULL, var_time_name=NULL, maxdif, units="mins", missing=TRUE)}
+  if(metric == "TimeUniqueness"){deepdf <- deepTimeUniqueness(data, var_time_name)}
+  #añadir todas las otras metricas
+
+  return(deepdf)
+
+}
 
 # Timeliness --------------------------------------------------------------
 
@@ -9,7 +18,7 @@
 #study of timeliness. data is the set of values. columndate is an integer to indicate the position of the date variable
 #maxdif is an integer to indicate the maximum difference allowed between two dates
 #missing is a boolean: TRUE if we want to see all results and FALSE if we always want to see the missing intervals
-deepTimeliness <- function(data, columnDate=NULL, var_time_name=NULL, maxdif, units="mins", missing=FALSE){
+deepTimeliness <- function(data, columnDate=NULL, var_time_name=NULL, maxdif, units="mins", missing=TRUE){
 
   #crear vector auxiliar de fechas que coja las fechas de la posicion 2 a la ultima
   #difftime(df$day[2], df$day[1], units = "mins") aplicar esto leyendo units del input y sin coger el ultimo valor de data
@@ -93,5 +102,35 @@ agg <- function(data, var_time_name, m){
   data <- data[, 2:3]
 
   return(data)
+
+}
+
+
+
+# Completeness ------------------------------------------------------------
+
+deepCompleteness <- function(data, var_time_name, position){
+    if(position){
+      deepcomp <- apply(data, 2, function(x) data[[var_time_name]][which(is.na(x))])
+    }else{
+      deepcomp<-apply(data, 2, function(x){1-(sum(is.na(x))/nrow(data))})
+    }
+    return(deepcomp)
+}
+
+
+
+
+# TimeUniqueness ----------------------------------------------------------
+
+deepTimeUniqueness <- function(data, var_time_name){
+
+  columnDate <- which(colnames(data) == var_time_name)
+
+  df <- as.data.frame(table(data[[columnDate]])) %>% arrange(desc(Freq)) %>% filter(Freq > 1)
+
+  colnames(df) <- c(var_time_name, "Frequency")
+
+  return(df)
 
 }
