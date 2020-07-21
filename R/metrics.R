@@ -76,7 +76,7 @@ isoutofrange <- function(data, ranges){
     if(is.numeric(data[,i])){
 
       aux<-which(data[,i] < ranges[1,i] | data[,i] > ranges[2,i])
-      check[[i]] <- aux
+      check[[colnames(data)[i]]] <- aux
     }
   }
   return(check)
