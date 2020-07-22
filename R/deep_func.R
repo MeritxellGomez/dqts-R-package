@@ -1,4 +1,6 @@
-#' Deep analysis fo data quality
+#' Deep analysis of data quality
+#'
+#' The data set is entered and the name of the metric to be analyzed in depth is indicated. Data quality can be evaluated by variables or the values in which an error occurs can be shown.
 #'
 #' @param data The data frame to be analyzed
 #' @param metric The name of the metric to be analyzed
@@ -13,7 +15,10 @@
 #' @examples
 deepDQ <- function(data, metric, columnDate, var_time_name = NULL, position = FALSE, dataref=NULL, ranges = NULL){
 
-  if(class(data) == 'ts'){data <- tsbox::ts_df(data)}
+  if(class(data) == 'ts'){
+    data <- tsbox::ts_df(data)
+    columnDate <- 1
+  }
 
   if(is.null(var_time_name)){var_time_name <- colnames(data)[columnDate]}
 
