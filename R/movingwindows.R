@@ -166,7 +166,7 @@ predictknn<-function(datavar, kneighbors, npred, pond){
     nw <- w/(sum(w))
     pred <- (nw %*% m)
   }else{
-    pred <- apply(m, 2, mean)
+    pred <- apply(m, 2, function(x)mean(x, na.rm = TRUE))
   }
 
   return(pred)
