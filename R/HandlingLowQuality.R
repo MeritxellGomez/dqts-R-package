@@ -12,7 +12,7 @@
 #' @export
 #'
 #' @examples
-handle_DQ <- function(data, metric, columnDate = NULL, var_time_name=NULL, ranges = NULL, method = "mean", maxdif = NULL, units = NULL){
+handleDQ <- function(data, metric, columnDate = NULL, var_time_name=NULL, ranges = NULL, method = "mean", maxdif = NULL, units = NULL){
 
   if(class(data) == 'ts'){data <- tsbox::ts_df(data)}
 
@@ -130,7 +130,7 @@ HLTimeUniqueness <- function(data, var_time_name = NULL){
 
 # Handling Low Range ------------------------------------------------------
 
-HLRange <- function(data, ranges=NULL){
+HLRange <- function(data, ranges){
 
   if(is.null(ranges)){ranges <- generateRangeData(data)}
 
@@ -139,7 +139,9 @@ HLRange <- function(data, ranges=NULL){
   ind <- c(1:length(listout))[sapply(listout, function(x) !is.null(x))]
 
   for (i in ind){
-    data[listout[[i]],i] <- mean(data[-c(listout[[i]]),i], na.rm = TRUE)
+
+    data[[names(listout)[i]]][listout[[i]]] <- mean(ranges[[names(listout)[i]]])
+
   }
 
   return(data)
