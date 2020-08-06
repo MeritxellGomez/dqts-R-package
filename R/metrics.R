@@ -98,6 +98,9 @@ Range<-function(data, ranges){
 
 consistent<-function(variable){
 
+  n<-length(variable)
+  variable <- variable[1:trunc(n/3)]
+
   mtemp<-mean(na.omit(variable))
   sdtemp<-sd(na.omit(variable))
 
@@ -122,6 +125,9 @@ Consistency<-function(data){
 
 typical<-function(variable){
 
+  n<-length(variable)
+  variable <- variable[1:trunc(n/3)]
+
   mtemp<-mean(na.omit(variable))
   sdtemp<-sd(na.omit(variable))
 
@@ -145,6 +151,9 @@ Typicality<-function(data){ #aplica función atípicos a todas las variables (co
 # Moderation --------------------------------------------------------------
 
 moderate<-function(variable){
+
+  n<-length(variable)
+  variable <- variable[1:trunc(n/3)]
 
   mtemp<-mean(na.omit(variable))
   sdtemp<-sd(na.omit(variable))
@@ -180,7 +189,7 @@ Timeliness<-function(data, columnDate, maxdif){
 
 # Conformity --------------------------------------------------------------
 
-Conformity<-function(data, dataref){
+Formats<-function(data, dataref){
 
   formats <- lapply(data, class)
   formatsref <- lapply(dataref, class)
@@ -195,13 +204,28 @@ Conformity<-function(data, dataref){
 
 }
 
+Names <- function(data, dataref){
+
+  col <- colnames(data)
+  colref <- colnames(dataref)
+
+  if(identical(col,colref)==FALSE) warning('The variable names are not correct')
+
+  identicals <- length(which(unlist(col) == unlist(colref)))
+
+  conformity <- identicals/length(unlist(col))
+
+  return(conformity)
+
+}
+
 
 # Quality -----------------------------------------------------------------
 
 quality<-function(data, columnDate, maxdif, dataref, ranges=NULL, weights=NULL){
 
   if(is.null(weights)){
-    weights<-c(rep(0.1,10))
+    weights<-c(rep((1/11),11))
   }
 
   w<-weights
@@ -220,17 +244,18 @@ quality<-function(data, columnDate, maxdif, dataref, ranges=NULL, weights=NULL){
 
   time<-Timeliness(data,columnDate, maxdif)
 
-  conf<-Conformity(data, dataref)
+  form<-Formats(data, dataref)
+  nam<-Names(data,dataref)
 
   quality<-(w[1]*comp + w[2]*compobv + w[3]*compvar +
               w[4]*tuni + w[5]*range + w[6]*cons +
-              w[7]*typ + w[8]*mod + w[9]*time + w[10]*conf)
+              w[7]*typ + w[8]*mod + w[9]*time + w[10]*form + w[11]*nam)
 
   return(data.frame(InitialDate = data[1,columnDate], FinalDate = data[nrow(data), columnDate], Completeness = comp, CompletenessObservations = compobv,
               CompletenessVariables = compvar, TimeUniqueness = tuni,
               Range = range, Consistency = cons, Typicality = typ,
-              Moderation = mod, Timeliness = time, Conformity = conf,
-              DataQuality = quality))
+              Moderation = mod, Timeliness = time, Formats = form,
+              Names = nam, DataQuality = quality))
 
 }
 
