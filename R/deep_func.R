@@ -13,7 +13,7 @@
 #' @export
 #'
 #' @examples
-deepDQ <- function(data, metric, columnDate, var_time_name = NULL, position = FALSE, dataref=NULL, ranges = NULL){
+deepDQ <- function(data, metric, columnDate=NULL, var_time_name = NULL, position = FALSE, dataref=NULL, ranges = NULL, maxdif, units="mins", missing=TRUE){
 
   if(class(data) == 'ts'){
     data <- tsbox::ts_df(data)
@@ -23,7 +23,7 @@ deepDQ <- function(data, metric, columnDate, var_time_name = NULL, position = FA
   if(is.null(var_time_name)){var_time_name <- colnames(data)[columnDate]}
 
   if(metric == "Completeness"){deepdf <- deepCompleteness(data, var_time_name, position)}
-  if(metric == "Timeliness"){deepdf <- deepTimeliness(data, columnDate=NULL, var_time_name=NULL, maxdif, units="mins", missing=TRUE)}
+  if(metric == "Timeliness"){deepdf <- deepTimeliness(data, columnDate, var_time_name, maxdif, units, missing)}
   if(metric == "TimeUniqueness"){deepdf <- deepTimeUniqueness(data, var_time_name)}
   if(metric == "Conformity"){deepdf <- deepConformity(data, dataref)}
   if(metric == "Range"){deepdf <- deepRange(data, ranges, var_time_name, position)}
@@ -56,9 +56,9 @@ deepTimeliness <- function(data, columnDate=NULL, var_time_name=NULL, maxdif, un
   loss.start <- data[[var_time_name]][pos]
   loss.finish <- data[[var_time_name]][pos+1]
 
-  waiting.time <- loss.finish - loss.start
+  waiting.time <- difftime(loss.finish, loss.start, units = units)
 
-  missing.amount <- trunc(((as.numeric(loss.finish - loss.start))/maxdif)-1)
+  missing.amount <- trunc(((as.numeric(waiting.time))/maxdif)-1)
 
   df.timeliness <- data.frame(loss.start, loss.finish, waiting.time, missing.amount)
 
