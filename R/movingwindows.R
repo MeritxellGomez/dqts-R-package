@@ -80,8 +80,10 @@ d_euclidean <- function(vec_x, vec_y){
 }
 
 
-#funcion que de un data frame salido de la funcion distance_knn (ordenado), escoger los k más cercanos
+#funcion que de un data frame salido de la funcion distance_knn (ordenado), escoger los k más cercanos sin NAS
 kneighbors <- function(distk, k){
+
+  distk <- distk[complete.cases(distk),]
 
   kneig <- distk[1:k,]
 
@@ -99,22 +101,51 @@ distance_knn <- function(datavar, idna = idna, h, npred, dist = "Euclidean", fut
 
   #horizon data to be compared
   h_data <- datavar[(firstna - h) : (firstna - 1)]
+  nna <- length(which(is.na(h_data)))
+
+  while(nna != 0){ #controlar que en el horizon no haya NA
+
+    h_data <- datavar[(firstna - h - nna) : (firstna - 1)]
+
+    nna2 <- length(which(is.na(h_data)))
+
+    if(nna2 == nna){
+      h_data <- na.omit(h_data)
+      nna <- length(which(is.na(h_data)))
+    }else{
+      nna <- nna2
+    }
+
+  }
 
   #built dataframe to be written
   dfdist <- data.frame(initial.value = integer(), final.value = integer(), distances = double(), stringsAsFactors = FALSE)
+
+  for(i in 1:npred){
+
+    dfdist[,i+3] <- double()
+    colnames(dfdist)[i+3] <- paste0('futurevalue_',i)
+  }
 
 
   #look for the distances with previous data
   initial1_f <- firstna - h - npred
 
-  for (i in 1:initial1_f){
+  if(initial1_f > 0){
+    for (i in 1:initial1_f){
 
-    int <- datavar[i:(i+h-1)]
+      int <- datavar[i:(i+h-1)]
 
-    d_aux <- d_euclidean(int, h_data)
+      d_aux <- d_euclidean(int, h_data)
 
-    dfdist[i,] <- data.frame(initial.value = i, final.value = i+h-1, distances = d_aux)
+      dfdist[i,] <- NA
+      dfdist[['initial.value']][i] <- i
+      dfdist[['final.value']][i] <- i+h-1
+      dfdist[['distances']][i] <- d_aux
 
+      dfdist[i, 4:(3+npred)] <- datavar[(i+h) : (i+h-1+npred)]
+
+    }
   }
 
   #if future == TRUE, look for the distances with future data
@@ -130,7 +161,12 @@ distance_knn <- function(datavar, idna = idna, h, npred, dist = "Euclidean", fut
 
       d_aux <- d_euclidean(int, h_data)
 
-      dfdist[initial1_f+j,] <- data.frame(initial.value = i, final.value = i+h-1, distances = d_aux)
+      dfdist[initial1_f+j,] <- NA
+      dfdist[['initial.value']][initial1_f+j] <- i
+      dfdist[['final.value']][initial1_f+j] <- i+h-1
+      dfdist[['distances']][initial1_f+j] <- d_aux
+
+      dfdist[initial1_f+j, 4:(3+npred)] <- datavar[(i+h) : (i+h-1+npred)]
 
       j<-j+1
 
@@ -149,16 +185,7 @@ distance_knn <- function(datavar, idna = idna, h, npred, dist = "Euclidean", fut
 
 predictknn<-function(datavar, kneighbors, npred, pond){
 
-  nearest.neighbors <- kneighbors[['final.value']]
-
-  k<-nrow(kneighbors)
-
-  m <- matrix(, nrow = k, ncol = npred)
-
-  #align the values of the neighbors
-  for (i in 1:k){
-    m[i,] <- datavar[(nearest.neighbors[i]+1) : (nearest.neighbors[i]+npred)]
-  }
+  m <- as.matrix(kneighbors[4:ncol(kneighbors)])
 
   #weighted average
   if(pond){
@@ -166,7 +193,7 @@ predictknn<-function(datavar, kneighbors, npred, pond){
     nw <- w/(sum(w))
     pred <- (nw %*% m)
   }else{
-    pred <- apply(m, 2, function(x)mean(x, na.rm = TRUE))
+    pred <- apply(m, 2, function(x)mean(x))
   }
 
   return(pred)
