@@ -16,7 +16,7 @@ impmean<- function(var, idna, future = TRUE){
 
 
 impKNPTS<-function(var, idna, future = TRUE){
-  browser()
+
   npred <- length(idna)
 
   #dejo el crossvalidation para mas tarde... de momento escojo un valor cualquiera de k
@@ -29,7 +29,7 @@ impKNPTS<-function(var, idna, future = TRUE){
 
   distknn <- distance_knn(datavar = var, idna = idna, h = 3, npred = npred, dist = "Euclidean", future = TRUE)
 
-  kn <- kneighbors(distknn, k = 2)
+  kn <- kneighbors(distknn, k = 3)
 
   pred <- predictknn(datavar = var, kneighbors = kn, npred = npred, pond = FALSE)
 
