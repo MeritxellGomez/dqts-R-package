@@ -1,0 +1,127 @@
+---
+title: "Prueba14092020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dqts)
+```
+
+Los datos de weatherdf tienen las siguientes vars: 
+```{r}
+head(weatherdf)
+```
+
+Ejecutamos la calidad total 
+```{r}
+DQ(weatherdf)
+```
+
+Si no introducimos conjunto de rangos y de referencia, se generan automaticamente. Tambien podemos pasarlos como parametros
+
+```{r}
+dq_weather_static <- DQ(weatherdf, ranges = weatherRange, dataref = weatherdf)
+dq_weather_static
+```
+
+Podemos visualizar la calidad total en un gráfico de barras
+
+```{r}
+dqplot(dq_weather_static)
+```
+
+O podemos ejecutar la calidad por ventanas, por ejemplo en 10 ventanas
+
+```{r}
+dq_weather_windows <- DQ(weatherdf, ranges = weatherRange, dataref = weatherdf, windows = TRUE, cte = TRUE, fixed = TRUE, nint = 10)
+dq_weather_windows
+```
+
+Y plotear la calidad móvil 
+```{r}
+dqplot(dq_weather_windows)
+```
+
+En la calidad estática se obtiene
+```{r}
+dqplot(dq_weather_static)
+```
+
+Analizamos en profundidas el TimeUniqueness
+```{r}
+deepDQ(data = weatherdf, metric = "TimeUniqueness", var_time_name = "date")
+```
+y solucionamos el problema que causa baja calidad en esa métrica
+```{r}
+weather_1 <- handleDQ(data = weatherdf, metric = "TimeUniqueness", var_time_name = "date")
+```
+
+El resultado es un conjunto de datos cuya calidad en TimeUniqueness es 1
+```{r}
+dqplot(DQ(weather_1))
+```
+
+Podemos hacer lo mismo con la Timeliness. Con la funcion deepDQ se identifica una pérdida de información de 10 días
+```{r}
+deepDQ(weather_1, metric = "Timeliness", var_time_name = "date", maxdif = 1, units = "days")
+```
+
+Se soluciona creando esas fechas y asignandoles NA (funcion no terminada)
+```{r}
+#weather_2 <- handleDQ(data = weather_1, metric = "Timeliness", var_time_name = "date", maxdif = 1, units = "days")
+```
+
+Tambien encontramos un par de valores fuera de rango. Uno en la variable temperature y el otro en humidity
+```{r}
+deepDQ(data = weather_1, metric = "Range", ranges = weatherRange)
+```
+
+Si le pedimos la posicion:
+```{r}
+deepDQ(data = weather_1, metric = "Range", ranges = weatherRange, var_time_name = "date", position = TRUE)
+```
+Solucionamos la baja calidad de Range:
+```{r}
+weather_3 <- handleDQ(data = weather_1, metric = "Range", ranges = weatherRange)
+```
+
+
+Ahora tenemos que Range = 1: 
+```{r}
+dqplot(DQ(weather_3, ranges = weatherRange))
+```
+
+Por ultimo, inspeccionamos Completeness para identificar NAS
+```{r}
+deepDQ(data = weather_3, metric = "Completeness")
+```
+
+Vemos que los NAS se encuentran en la variable humidity. Le pedimos la posicion
+```{r}
+deepDQ(data = weather_3, metric = "Completeness", var_time_name = "date" ,position = TRUE)
+```
+
+Los imputamos de diferentes formas, por la media y con el metodo del KNN en Time Series, KNPTS. 
+```{r}
+weather_4 <- handleDQ(data = weather_3, metric = "Completeness", method = "mean")
+weather_5 <- handleDQ(data = weather_3, metric = "Completeness", method = "KNPTS")
+```
+
+Comparamos los resultados 
+```{r}
+weather_6 <- cbind(weather_3, humidity_mean = weather_4$humidity, humidity_KNPTS = weather_5$humidity)
+
+ggplot(weather_6, aes(x=date, y=humidity, color="real")) + 
+  geom_line() + 
+  geom_point(aes(x=date, y=humidity_mean, color="mean")) + 
+  geom_point(aes(x=date, y=humidity_KNPTS, color = "KNPTS"))
+```
+
+La calidad de los datos ahora es 
+```{r}
+dqplot(DQ(data = weather_5, ranges = weatherRange, dataref = weatherdf))
+```
