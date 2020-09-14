@@ -147,6 +147,8 @@ deepCompleteness <- function(data, var_time_name, position){
 
 deepTimeUniqueness <- function(data, var_time_name){
 
+  library(dplyr)
+
   columnDate <- which(colnames(data) == var_time_name)
 
   df <- as.data.frame(table(data[[columnDate]])) %>% arrange(desc(Freq)) %>% filter(Freq > 1)
