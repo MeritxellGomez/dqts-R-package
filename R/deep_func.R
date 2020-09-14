@@ -20,7 +20,9 @@ deepDQ <- function(data, metric, columnDate=NULL, var_time_name = NULL, position
     columnDate <- 1
   }
 
-  if(is.null(var_time_name)){var_time_name <- colnames(data)[columnDate]}
+  if(is.null(columnDate) & is.null(var_time_name)){warning("date or time variable should be given")}
+  else if(is.null(columnDate)){columnDate <- which(colnames(data) == var_time_name)}
+  else if(is.null(var_time_name)){var_time_name <- colnames(data)[columnDate]}
 
   if(metric == "Completeness"){deepdf <- deepCompleteness(data, var_time_name, position)}
   if(metric == "Timeliness"){deepdf <- deepTimeliness(data, columnDate, var_time_name, maxdif, units, missing)}

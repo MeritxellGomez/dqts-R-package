@@ -21,6 +21,10 @@ DQ <- function(data, columnDate = NULL, maxdif = NULL, dataref = NULL, ranges = 
 
   if(class(data) == 'ts'){data <- tsbox::ts_df(data)}
 
+  if(is.null(columnDate) & is.null(var_time_name)){warning("date or time variable should be given")}
+  else if(is.null(columnDate)){columnDate <- which(colnames(data) == var_time_name)}
+  else if(is.null(var_time_name)){var_time_name <- colnames(data)[columnDate]}
+
   if(is.null(columnDate)){
     n <- length(which(sapply(data, class)=='Date'))
     if(n==1){
