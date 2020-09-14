@@ -16,8 +16,12 @@ handleDQ <- function(data, metric, columnDate = NULL, var_time_name=NULL, ranges
 
   if(class(data) == 'ts'){data <- tsbox::ts_df(data)}
 
+  if(is.null(columnDate) & is.null(var_time_name)){warning("date or time variable should be given")}
+  else if(is.null(columnDate)){columnDate <- which(colnames(data) == var_time_name)}
+  else if(is.null(var_time_name)){var_time_name <- colnames(data)[columnDate]}
+
   if(metric == "Completeness"){HLCompleteness(data, method)}
-  else if(metric == "TimeUniqueness"){HLTimeUniqueness(data, var_time_name)}
+  else if(metric == "TimeUniqueness"){HLTimeUniqueness(data, columnDate)}
   else if(metric == 'Range'){HLRange(data, ranges)}
   else if(metric == 'Consistency'){HLConsistency(data)}
   else if(metric == 'Typicality'){HLTypicality(data)}
@@ -113,7 +117,7 @@ HLCompleteness <- function(data, method="mean"){
 
 # Handling Time Uniqueness ------------------------------------------------
 
-HLTimeUniqueness <- function(data, var_time_name = NULL){
+HLTimeUniqueness <- function(data, columnDate = NULL, var_time_name = NULL){
 
   if(is.null(var_time_name)){stop('Incorrect time variable name. The name of the time variable have to be written as an argument')}
   if(isFALSE(var_time_name %in% colnames(data))){stop('Incorrect time variable name. The name entered does not match any variable in the data set')}
@@ -199,6 +203,12 @@ HLTimeliness <- function(data, columnDate, maxdif, units){
   }
 
   #mirar cuando timeliness es mayor que maxdif
+
+  dif<-diff(data[,columnDate])
+
+  outdif<-which(dif>maxdif)
+
+  data[[var_time_name]][outdif]
 
   #en esos huecos meter tantas fechas como se hayan perdido y asignarle al resto de valores NA
 
