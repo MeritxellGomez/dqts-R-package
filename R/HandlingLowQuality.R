@@ -202,19 +202,52 @@ HLTimeliness <- function(data, columnDate, maxdif, units){
     stop('units should be one of mins, days, secs')
   }
 
-  #mirar cuando timeliness es mayor que maxdif
-
   dif<-diff(data[,columnDate])
 
   outdif<-which(dif>maxdif)
+  outdif_post <- outdif + 1
 
-  data[[var_time_name]][outdif]
+  l <- list()
 
-  #en esos huecos meter tantas fechas como se hayan perdido y asignarle al resto de valores NA
+  for (i in 1:length(outdif)){
 
+    l[[i]] <- c(data[[var_time_name]][outdif[i]], data[[var_time_name]][outdif_post[i]])
+
+  }
+
+  df_list <- lapply(l, function(x)aux_timeliness(x, units = units, data = data))
+
+  for (j in 1:length(df_list)){
+
+    data <- rbind(data, df_list[[j]])
+
+  }
+
+  data <- data[order(data[[var_time_name]]),]
+
+  rownames(data) <- c(1:nrow(data))
+
+  return(data)
 }
 
+aux_timeliness <- function(vec, units, data){
 
+  n <- ncol(data) - 1
+
+  missingtime <- seq(from = vec[1], to = vec[2], by = units)
+  missingtime <- missingtime[-c(1,length(missingtime))]
+
+  m <- length(missingtime)
+
+  cols <- matrix(rep(NA, m*n), nrow = m, ncol = n)
+
+  aux <- data.frame(missingtime, cols)
+
+  colnames(aux) <- colnames(data)
+
+  return(aux)
+
+}
 
 # Handling Low Conformity -------------------------------------------------
 
