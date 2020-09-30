@@ -36,7 +36,7 @@ handleDQ <- function(data, metric, columnDate = NULL, var_time_name=NULL, ranges
 # Handling Low Completeness -----------------------------------------------
 
 idlist <- function(idvec){
-
+browser()
   idbreak <- which(diff(idvec) > 1)
   idbreak <- c(idbreak, length(idvec))
   n <- length(idbreak)
@@ -57,7 +57,7 @@ idlist <- function(idvec){
 }
 
 imputation <- function(var,method, idna){
-
+browser()
   if(method == "mean"){
     estim <- impmean(var = var, idna = idna)
   }else if(method == "KNPTS"){
@@ -72,7 +72,7 @@ imputation <- function(var,method, idna){
 
 
 imputena <- function(method, var){
-
+browser()
   idna <- which(is.na(var))
   idnalist <- idlist(idna)
 
@@ -89,7 +89,7 @@ imputena <- function(method, var){
 }
 
 HLCompleteness <- function(data, method="mean"){
-
+browser()
   nacol <- apply(data, 2, function(x) sum(is.na(x)))
 
   #hay que añadir la condicion de que solo mire para las columnas numericas.
@@ -192,15 +192,15 @@ HLTimeliness <- function(data, columnDate, maxdif, units){
   first_date <- data[[var_time_name]][1]
   last_date <- data[[var_time_name]][nrow(data)]
 
-  if(units == "mins"){
-      step <- 60*maxdif
-  }else if(units == "days"){
-    step <- 3600*maxdif
-  }else if(units == "secs"){
-    step <- maxdif
-  }else{
-    stop('units should be one of mins, days, secs')
-  }
+  # if(units == "mins"){
+  #     step <- 60*maxdif
+  # }else if(units == "days"){
+  #   step <- 3600*maxdif
+  # }else if(units == "secs"){
+  #   step <- maxdif
+  # }else{
+  #   stop('units should be one of mins, days, secs')
+  # }
 
   dif<-diff(data[,columnDate])
 
@@ -215,7 +215,7 @@ HLTimeliness <- function(data, columnDate, maxdif, units){
 
   }
 
-  df_list <- lapply(l, function(x)aux_timeliness(x, units = units, data = data))
+  df_list <- lapply(l, function(x)aux_timeliness(x, units = units, data = data, columnDate=columnDate))
 
   for (j in 1:length(df_list)){
 
@@ -230,7 +230,7 @@ HLTimeliness <- function(data, columnDate, maxdif, units){
   return(data)
 }
 
-aux_timeliness <- function(vec, units, data){
+aux_timeliness <- function(vec, units, data, columnDate){
 
   n <- ncol(data) - 1
 
@@ -241,7 +241,17 @@ aux_timeliness <- function(vec, units, data){
 
   cols <- matrix(rep(NA, m*n), nrow = m, ncol = n)
 
-  aux <- data.frame(missingtime, cols)
+  if(columnDate == 1){
+    aux <- data.frame(missingtime, cols)
+  }else if(columnDate == ncol(data)){
+    aux <- data.frame(cols, missingtime)
+  }else{
+
+    cols1 <- cols[,1:(columnDate-1)]
+    cols2 <- cols[,columnDate:n]
+
+    aux <- data.frame(cols1, missingtime, cols2)
+  }
 
   colnames(aux) <- colnames(data)
 
