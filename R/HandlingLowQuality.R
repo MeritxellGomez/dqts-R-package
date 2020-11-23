@@ -21,7 +21,7 @@ handleDQ <- function(data, metric, columnDate = NULL, var_time_name=NULL, ranges
   else if(is.null(var_time_name)){var_time_name <- colnames(data)[columnDate]}
 
   if(metric == "Completeness"){HLCompleteness(data, method)}
-  else if(metric == "TimeUniqueness"){HLTimeUniqueness(data, columnDate)}
+  else if(metric == "TimeUniqueness"){HLTimeUniqueness(data, columnDate, var_time_name)}
   else if(metric == 'Range'){HLRange(data, ranges)}
   else if(metric == 'Consistency'){HLConsistency(data)}
   else if(metric == 'Typicality'){HLTypicality(data)}
@@ -36,7 +36,7 @@ handleDQ <- function(data, metric, columnDate = NULL, var_time_name=NULL, ranges
 # Handling Low Completeness -----------------------------------------------
 
 idlist <- function(idvec){
-browser()
+
   idbreak <- which(diff(idvec) > 1)
   idbreak <- c(idbreak, length(idvec))
   n <- length(idbreak)
@@ -57,7 +57,7 @@ browser()
 }
 
 imputation <- function(var,method, idna){
-browser()
+
   if(method == "mean"){
     estim <- impmean(var = var, idna = idna)
   }else if(method == "KNPTS"){
@@ -72,7 +72,7 @@ browser()
 
 
 imputena <- function(method, var){
-browser()
+
   idna <- which(is.na(var))
   idnalist <- idlist(idna)
 
@@ -89,7 +89,7 @@ browser()
 }
 
 HLCompleteness <- function(data, method="mean"){
-browser()
+
   nacol <- apply(data, 2, function(x) sum(is.na(x)))
 
   #hay que añadir la condicion de que solo mire para las columnas numericas.
@@ -117,7 +117,7 @@ browser()
 
 # Handling Time Uniqueness ------------------------------------------------
 
-HLTimeUniqueness <- function(data, columnDate = NULL, var_time_name = NULL){
+HLTimeUniqueness <- function(data, columnDate, var_time_name){
 
   if(is.null(var_time_name)){stop('Incorrect time variable name. The name of the time variable have to be written as an argument')}
   if(isFALSE(var_time_name %in% colnames(data))){stop('Incorrect time variable name. The name entered does not match any variable in the data set')}
@@ -202,7 +202,7 @@ HLTimeliness <- function(data, columnDate, maxdif, units){
   #   stop('units should be one of mins, days, secs')
   # }
 
-  dif<-diff(data[,columnDate])
+  dif<-as.numeric(diff(data[,columnDate]))
 
   outdif<-which(dif>maxdif)
   outdif_post <- outdif + 1
@@ -230,6 +230,7 @@ HLTimeliness <- function(data, columnDate, maxdif, units){
   return(data)
 }
 
+#vec contains two dates. output is a df with dates between and NA in the rest of vars
 aux_timeliness <- function(vec, units, data, columnDate){
 
   n <- ncol(data) - 1
@@ -239,19 +240,23 @@ aux_timeliness <- function(vec, units, data, columnDate){
 
   m <- length(missingtime)
 
-  cols <- matrix(rep(NA, m*n), nrow = m, ncol = n)
+  l<-list()
 
-  if(columnDate == 1){
-    aux <- data.frame(missingtime, cols)
-  }else if(columnDate == ncol(data)){
-    aux <- data.frame(cols, missingtime)
-  }else{
+  for (i in 1:ncol(data)){
 
-    cols1 <- cols[,1:(columnDate-1)]
-    cols2 <- cols[,columnDate:n]
+    if(i != columnDate){
 
-    aux <- data.frame(cols1, missingtime, cols2)
+      l[[i]] <- rep(NA, m)
+
+    }else{
+
+      l[[i]] <- missingtime
+
+    }
+
   }
+
+  aux <- data.frame(l)
 
   colnames(aux) <- colnames(data)
 

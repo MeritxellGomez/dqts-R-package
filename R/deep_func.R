@@ -13,7 +13,7 @@
 #' @export
 #'
 #' @examples
-deepDQ <- function(data, metric, columnDate=NULL, var_time_name = NULL, position = FALSE, dataref=NULL, ranges = NULL, maxdif, units="mins", missing=TRUE){
+deepDQ <- function(data, metric, columnDate=NULL, var_time_name = NULL, position = FALSE, dataref=NULL, ranges = NULL, maxdif, units="sec", missing=TRUE){
 
   if(class(data) == 'ts'){
     data <- tsbox::ts_df(data)
@@ -41,7 +41,7 @@ deepDQ <- function(data, metric, columnDate=NULL, var_time_name = NULL, position
 #study of timeliness. data is the set of values. columndate is an integer to indicate the position of the date variable
 #maxdif is an integer to indicate the maximum difference allowed between two dates
 #missing is a boolean: TRUE if we want to see all results and FALSE if we always want to see the missing intervals
-deepTimeliness <- function(data, columnDate=NULL, var_time_name=NULL, maxdif, units="mins", missing=TRUE){
+deepTimeliness <- function(data, columnDate=NULL, var_time_name=NULL, maxdif, units="sec", missing=TRUE){
 
   #crear vector auxiliar de fechas que coja las fechas de la posicion 2 a la ultima
   #difftime(df$day[2], df$day[1], units = "mins") aplicar esto leyendo units del input y sin coger el ultimo valor de data

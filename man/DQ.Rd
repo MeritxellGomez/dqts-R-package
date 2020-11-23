@@ -7,7 +7,9 @@
 DQ(
   data,
   columnDate = NULL,
+  var_time_name = NULL,
   maxdif = NULL,
+  units = "sec",
   dataref = NULL,
   ranges = NULL,
   weights = NULL,
