@@ -177,7 +177,17 @@ Moderation<-function(data){ #aplica función extremos a todas las variables (col
 
 # Timeliness --------------------------------------------------------------
 
-Timeliness<-function(data, columnDate, maxdif){
+Timeliness<-function(data, columnDate, maxdif, units = 'sec'){
+
+  if(units == 'hour'){
+    maxdif <- maxdif * 3600
+  }else if(units == 'min'){
+    maxdif <- maxdif * 60
+  }else if(units == 'sec'){
+    maxdif <- maxdif
+  }else{
+    stop('units not defined')
+  }
 
   dif<-diff(data[,columnDate])
 
@@ -222,7 +232,7 @@ Names <- function(data, dataref){
 
 # Quality -----------------------------------------------------------------
 
-quality<-function(data, columnDate, maxdif, dataref, ranges=NULL, weights=NULL){
+quality<-function(data, columnDate, maxdif, units, dataref, ranges=NULL, weights=NULL){
 
   if(is.null(weights)){
     weights<-c(rep((1/11),11))
@@ -242,7 +252,7 @@ quality<-function(data, columnDate, maxdif, dataref, ranges=NULL, weights=NULL){
   typ<-Typicality(data)
   mod<-Moderation(data)
 
-  time<-Timeliness(data,columnDate, maxdif)
+  time<-Timeliness(data,columnDate, maxdif, units)
 
   form<-Formats(data, dataref)
   nam<-Names(data,dataref)
