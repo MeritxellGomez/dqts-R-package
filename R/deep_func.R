@@ -13,7 +13,7 @@
 #' @export
 #'
 #' @examples
-deepDQ <- function(data, metric, columnDate=NULL, var_time_name = NULL, position = FALSE, dataref=NULL, ranges = NULL, maxdif, units="sec", missing=TRUE){
+deepDQ <- function(data, metric, columnDate=NULL, var_time_name = NULL, position = FALSE, dataref=NULL, ranges = NULL, maxdif, units="secs", missing=TRUE){
 
   if(class(data) == 'ts'){
     data <- tsbox::ts_df(data)
@@ -41,13 +41,13 @@ deepDQ <- function(data, metric, columnDate=NULL, var_time_name = NULL, position
 #study of timeliness. data is the set of values. columndate is an integer to indicate the position of the date variable
 #maxdif is an integer to indicate the maximum difference allowed between two dates
 #missing is a boolean: TRUE if we want to see all results and FALSE if we always want to see the missing intervals
-deepTimeliness <- function(data, columnDate=NULL, var_time_name=NULL, maxdif, units="sec", missing=TRUE){
+deepTimeliness <- function(data, columnDate=NULL, var_time_name=NULL, maxdif, units="secs", missing=TRUE){
 
-  #crear vector auxiliar de fechas que coja las fechas de la posicion 2 a la ultima
-  #difftime(df$day[2], df$day[1], units = "mins") aplicar esto leyendo units del input y sin coger el ultimo valor de data
-
-  if(!is.null(columnDate)){
-    var_time_name <- colnames(data)[columnDate]
+  if(units == 'months'){
+    maxdif <- 31
+    units2 <- 'days'
+  }else{
+    units2 <- units
   }
 
   date_vec <- data[[var_time_name]]
@@ -58,9 +58,13 @@ deepTimeliness <- function(data, columnDate=NULL, var_time_name=NULL, maxdif, un
   loss.start <- data[[var_time_name]][pos]
   loss.finish <- data[[var_time_name]][pos+1]
 
-  waiting.time <- difftime(loss.finish, loss.start, units = units)
+  waiting.time <- difftime(loss.finish, loss.start, units = units2)
 
-  missing.amount <- trunc(((as.numeric(waiting.time))/maxdif)-1)
+  if(units == 'months'){
+    missing.amount <- round(((as.numeric(abs(waiting.time)))/maxdif)-1)
+  }else{
+    missing.amount <- trunc(((as.numeric(abs(waiting.time)))/maxdif)-1)
+  }
 
   df.timeliness <- data.frame(loss.start, loss.finish, waiting.time, missing.amount)
 
@@ -195,7 +199,7 @@ deepRange <- function(data, ranges, var_time_name, position){
 
   }else{
 
-    df <- lapply(out, function(x) length(x)/nrow(data))
+    df <- lapply(out, function(x) 1-(length(x)/nrow(data)))
 
   }
 
