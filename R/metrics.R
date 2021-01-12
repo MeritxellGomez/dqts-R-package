@@ -177,24 +177,39 @@ Moderation<-function(data){ #aplica función extremos a todas las variables (col
 
 # Timeliness --------------------------------------------------------------
 
-Timeliness<-function(data, columnDate, maxdif, units = 'sec'){
+Timeliness<-function(data, columnDate, maxdif, units = 'secs'){
+  #se contempla 'secs', 'mins', 'hours', 'days', 'months'
 
-  if(units == 'hour'){
-    maxdif <- maxdif * 3600
-  }else if(units == 'min'){
-    maxdif <- maxdif * 60
-  }else if(units == 'sec'){
-    maxdif <- maxdif
+  if(units == 'months'){
+    maxdif <- 31
+    units2 <- 'days'
   }else{
-    stop('units not defined')
+    units2 <- units
   }
 
   dif<-diff(data[,columnDate])
 
   outdif<-length(which(dif>maxdif))
 
-  return(1-(outdif/length(dif)))
+  pos <- which(dif>maxdif)
+  loss.start <- data[pos,columnDate]
+  loss.finish <- data[pos+1,columnDate]
+
+  waiting.time <- difftime(loss.finish, loss.start, units = units2)
+
+  if(units == 'months'){
+    missing.amount <- round(((as.numeric(abs(waiting.time)))/maxdif)-1)
+  }else{
+  missing.amount <- trunc(((as.numeric(abs(waiting.time)))/maxdif)-1)
+  }
+
+  totaltimes <- sum(missing.amount) + length(data[,columnDate])
+
+  timeliness <- length(data[,columnDate]) / totaltimes
+
+  return(timeliness)
 }
+
 
 
 # Conformity --------------------------------------------------------------
