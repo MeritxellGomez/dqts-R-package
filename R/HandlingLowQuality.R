@@ -62,6 +62,8 @@ imputation <- function(var,method, idna){
     estim <- impmean(var = var, idna = idna)
   }else if(method == "KNPTS"){
     estim <- impKNPTS(var = var, idna = idna, future = TRUE)
+  }else if(method == "mean2"){
+    estim <- impmean2(var = var, idna = idna, future = TRUE)
   }else{
     estim <- 0
   }
@@ -135,6 +137,9 @@ HLTimeUniqueness <- function(data, columnDate, var_time_name){
 # Handling Low Range ------------------------------------------------------
 
 HLRange <- function(data, ranges){
+
+  #añadir que se pueda escoger method = mean (la media de los limits),
+  #limits (si sale por arriba poner el max y si sale por abajo poner el min), imputemethods
 
   if(is.null(ranges)){ranges <- generateRangeData(data)}
 
