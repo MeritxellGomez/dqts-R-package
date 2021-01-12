@@ -13,7 +13,7 @@ deepDQ(
   dataref = NULL,
   ranges = NULL,
   maxdif,
-  units = "sec",
+  units = "secs",
   missing = TRUE
 )
 }
