@@ -17,7 +17,7 @@
 #' @return A data frame containing the values of all quality metrics in columns
 #' @importFrom magrittr %>%
 #' @export
-DQ <- function(data, columnDate = NULL, var_time_name = NULL, maxdif = NULL, units = 'sec', dataref = NULL, ranges = NULL, weights = NULL, windows=FALSE, cte=TRUE, fixed=TRUE, nint=3, by=10){
+DQ <- function(data, columnDate = NULL, var_time_name = NULL, maxdif = NULL, units = 'secs', dataref = NULL, ranges = NULL, weights = NULL, windows=FALSE, cte=TRUE, fixed=TRUE, nint=3, by=10){
 
   if(class(data) == 'ts'){data <- tsbox::ts_df(data)}
 
