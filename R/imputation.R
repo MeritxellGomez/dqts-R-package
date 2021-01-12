@@ -14,6 +14,19 @@ impmean<- function(var, idna, future = TRUE){
 
 }
 
+impmean2<- function(var, idna, future = TRUE){
+
+  a <- var[min(idna) - 1]
+  b <- var[max(idna) + 1]
+
+  value <- mean(c(a,b))
+
+  pred <- rep(value, length(idna))
+
+  return(pred)
+
+}
+
 
 impKNPTS<-function(var, idna, future = TRUE){
 
