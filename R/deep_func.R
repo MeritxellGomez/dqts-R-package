@@ -13,7 +13,7 @@
 #' @export
 #'
 #' @examples
-deepDQ <- function(data, metric, columnDate=NULL, var_time_name = NULL, position = FALSE, dataref=NULL, ranges = NULL, maxdif, units="secs", missing=TRUE){
+deepDQ <- function(data, metric, columnDate=NULL, var_time_name = NULL, position = FALSE, dataref=NULL, ranges = NULL, maxdif, units="secs"){
 
   if(class(data) == 'ts'){
     data <- tsbox::ts_df(data)
@@ -25,9 +25,9 @@ deepDQ <- function(data, metric, columnDate=NULL, var_time_name = NULL, position
   else if(is.null(var_time_name)){var_time_name <- colnames(data)[columnDate]}
 
   if(metric == "Completeness"){deepdf <- deepCompleteness(data, var_time_name, position)}
-  if(metric == "Timeliness"){deepdf <- deepTimeliness(data, columnDate, var_time_name, maxdif, units, missing)}
+  if(metric == "Timeliness"){deepdf <- deepTimeliness(data, columnDate, var_time_name, maxdif, units)}
   if(metric == "TimeUniqueness"){deepdf <- deepTimeUniqueness(data, var_time_name)}
-  if(metric == "Conformity"){deepdf <- deepConformity(data, dataref)}
+  #if(metric == "Conformity"){deepdf <- deepConformity(data, dataref)}
   if(metric == "Range"){deepdf <- deepRange(data, ranges, var_time_name, position)}
   #añadir todas las otras metricas
 
@@ -41,7 +41,7 @@ deepDQ <- function(data, metric, columnDate=NULL, var_time_name = NULL, position
 #study of timeliness. data is the set of values. columndate is an integer to indicate the position of the date variable
 #maxdif is an integer to indicate the maximum difference allowed between two dates
 #missing is a boolean: TRUE if we want to see all results and FALSE if we always want to see the missing intervals
-deepTimeliness <- function(data, columnDate=NULL, var_time_name=NULL, maxdif, units="secs", missing=TRUE){
+deepTimeliness <- function(data, columnDate=NULL, var_time_name=NULL, maxdif, units="secs"){
 
   if(units == 'months'){
     maxdif <- 31
@@ -67,8 +67,6 @@ deepTimeliness <- function(data, columnDate=NULL, var_time_name=NULL, maxdif, un
   }
 
   df.timeliness <- data.frame(loss.start, loss.finish, waiting.time, missing.amount)
-
-  if(missing==FALSE){df.timeliness <- df.timeliness[-which(df.timeliness$missing.amount==0),]}
 
   return(df.timeliness)
 

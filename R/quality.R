@@ -38,7 +38,8 @@ DQ <- function(data, columnDate = NULL, var_time_name = NULL, maxdif = NULL, uni
 
   if(is.null(dataref)){
       warning('Reference data frame should be given. The original data has been taken as reference data')
-      dataref <- data
+      reference <- t(as.data.frame(sapply(data, class)))
+      dataref <- as.data.frame(reference)
   }
 
   if(is.null(ranges)){

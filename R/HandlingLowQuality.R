@@ -22,12 +22,12 @@ handleDQ <- function(data, metric, columnDate = NULL, var_time_name=NULL, ranges
 
   if(metric == "Completeness"){HLCompleteness(data, method)}
   else if(metric == "TimeUniqueness"){HLTimeUniqueness(data, columnDate, var_time_name)}
-  else if(metric == 'Range'){HLRange(data, ranges)}
+  else if(metric == 'Range'){HLRange(data, ranges, method)}
   else if(metric == 'Consistency'){HLConsistency(data)}
   else if(metric == 'Typicality'){HLTypicality(data)}
   else if(metric == 'Moderation'){HLModeration(data)}
   else if(metric == "Timeliness"){HLTimeliness(data, columnDate, maxdif, units)}
-  else if(metric == "Conformity"){HLConformity(data)}
+  #else if(metric == "Conformity"){HLConformity(data)}
   else(stop('Incorrect metric name'))
 
 }
@@ -136,24 +136,56 @@ HLTimeUniqueness <- function(data, columnDate, var_time_name){
 
 # Handling Low Range ------------------------------------------------------
 
-HLRange <- function(data, ranges){
+HLRange <- function(data, ranges, method = 'mean'){
 
   #añadir que se pueda escoger method = mean (la media de los limits),
   #limits (si sale por arriba poner el max y si sale por abajo poner el min), imputemethods
 
   if(is.null(ranges)){ranges <- generateRangeData(data)}
 
-  listout <- isoutofrange(data, ranges)
+  listout <- isoutofrange(data, ranges) #devuelve lista de variables y cada elemento contiene vector de indices out of range
 
   ind <- c(1:length(listout))[sapply(listout, function(x) !is.null(x))]
 
+  if(method == 'mean'){
+    data <- imputeRangesMean(data, ranges, ind, listout)
+  }else if(method == 'maxmin'){
+    data <- imputeRangesMaxMin(data, ranges, ind, listout)
+  }else if(method == 'KNPTS'){
+    data <- imputeRangesKNPTS(data, ranges, ind, listout)
+  }else{
+    data <- 'Method not correct'
+  }
+
+  return(data)
+}
+
+
+imputeRangesMean <- function(data, ranges, ind, listout){
+
+  for (i in ind){
+    data[[names(listout)[i]]][listout[[i]]] <- mean(ranges[[names(listout)[i]]])
+  }
+  return(data)
+}
+
+imputeRangesMaxMin <- function(data, ranges, ind, listout){
+
   for (i in ind){
 
-    data[[names(listout)[i]]][listout[[i]]] <- mean(ranges[[names(listout)[i]]])
+    data[[names(listout)[i]]][listout[[i]]] <- ifelse(data[[names(listout)[i]]][listout[[i]]] < ranges[[names(listout)[i]]][1], ranges[[names(listout)[i]]][1],
+                                                      ifelse(data[[names(listout)[i]]][listout[[i]]] > ranges[[names(listout)[i]]][2], ranges[[names(listout)[i]]][2], 'error'))
 
   }
 
   return(data)
+
+}
+
+imputeRangesKNPTS <- function(data, ranges, ind, listout){
+
+  #darle una vuelta a ver si puedo aprovechar el de impute. Fijo que si
+
 }
 
 

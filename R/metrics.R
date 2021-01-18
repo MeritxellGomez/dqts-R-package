@@ -217,15 +217,14 @@ Timeliness<-function(data, columnDate, maxdif, units = 'secs'){
 Formats<-function(data, dataref){
 
   formats <- lapply(data, class)
-  formatsref <- lapply(dataref, class)
 
   if(identical(formats,formatsref)==FALSE) warning('The variable formats are not correct')
 
-  identicals <- length(which(unlist(formats) == unlist(formatsref)))
+  identicals <- length(which(unlist(formats) == dataref[1,]))
 
-  conformity <- identicals/length(unlist(formats))
+  formatsvalue <- identicals/length(unlist(formats))
 
-  return(conformity)
+  return(fomatsvalue)
 
 }
 
@@ -238,9 +237,9 @@ Names <- function(data, dataref){
 
   identicals <- length(which(unlist(col) == unlist(colref)))
 
-  conformity <- identicals/length(unlist(col))
+  namesvalue <- identicals/length(unlist(col))
 
-  return(conformity)
+  return(namesvalue)
 
 }
 
