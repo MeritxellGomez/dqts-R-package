@@ -13,8 +13,7 @@ deepDQ(
   dataref = NULL,
   ranges = NULL,
   maxdif,
-  units = "secs",
-  missing = TRUE
+  units = "secs"
 )
 }
 \arguments{

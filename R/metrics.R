@@ -213,18 +213,31 @@ Timeliness<-function(data, columnDate, maxdif, units = 'secs'){
 
 
 # Conformity --------------------------------------------------------------
+generateReferenceData <- function(data){
+
+  mysample <- data[sample(nrow(data), round(0.4*nrow(data))),]
+
+  types <- lapply(mysample, class)
+  types <- lapply(types, function(x) if(length(x) != 1){x <- paste(x, collapse = " ")}else{x <- x})
+  df<- data.frame(types, stringsAsFactors = FALSE)
+
+  return(df)
+
+}
 
 Formats<-function(data, dataref){
 
   formats <- lapply(data, class)
+  formats <- lapply(formats, function(x) if(length(x) != 1){x <- paste(x, collapse = " ")}else{x <- x})
+  formats <- data.frame(formats, stringsAsFactors = FALSE)
 
-  if(identical(formats,formatsref)==FALSE) warning('The variable formats are not correct')
+  if(identical(formats[1,],dataref[1,])==FALSE) warning('The variable formats are not correct')
 
-  identicals <- length(which(unlist(formats) == dataref[1,]))
+  identicals <- length(which(formats[1,] == dataref[1,]))
 
-  formatsvalue <- identicals/length(unlist(formats))
+  formatsvalue <- identicals/ncol(formats)
 
-  return(fomatsvalue)
+  return(formatsvalue)
 
 }
 

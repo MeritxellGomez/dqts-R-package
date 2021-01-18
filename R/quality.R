@@ -37,13 +37,12 @@ DQ <- function(data, columnDate = NULL, var_time_name = NULL, maxdif = NULL, uni
   }
 
   if(is.null(dataref)){
-      warning('Reference data frame should be given. The original data has been taken as reference data')
-      reference <- t(as.data.frame(sapply(data, class)))
-      dataref <- as.data.frame(reference)
+      warning('Reference data frame should be given. A sample of original data has been taken as reference data')
+      dataref <- generateReferenceData(data)
   }
 
   if(is.null(ranges)){
-    warning('Range data frame should be given. The maximum and minimum values from the original data have been taken as range data')
+    warning('Range data frame should be given. The maximum and minimum values from a sample of original data have been taken as range data')
     ranges <- generateRangeData(data)
   }
 
