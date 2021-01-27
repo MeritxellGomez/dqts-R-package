@@ -191,21 +191,25 @@ Timeliness<-function(data, columnDate, maxdif, units){
 
   outdif<-length(which(dif>maxdif))
 
-  pos <- which(dif>maxdif)
-  loss.start <- data[pos,columnDate]
-  loss.finish <- data[pos+1,columnDate]
-
-  waiting.time <- difftime(loss.finish, loss.start, units = units2)
-
-  if(units == 'months'){
-    missing.amount <- round(((as.numeric(abs(waiting.time)))/maxdif)-1)
+  if(outdif == 0){
+    timeliness <- 1
   }else{
-  missing.amount <- trunc(((as.numeric(abs(waiting.time)))/maxdif)-1)
+    pos <- which(dif>maxdif)
+    loss.start <- data[pos,columnDate]
+    loss.finish <- data[pos+1,columnDate]
+
+    waiting.time <- difftime(loss.finish, loss.start, units = units2)
+
+    if(units == 'months'){
+      missing.amount <- round(((as.numeric(abs(waiting.time)))/maxdif)-1)
+    }else{
+      missing.amount <- trunc(((as.numeric(abs(waiting.time)))/maxdif)-1)
+    }
+
+    totaltimes <- sum(missing.amount) + length(data[,columnDate])
+
+    timeliness <- length(data[,columnDate]) / totaltimes
   }
-
-  totaltimes <- sum(missing.amount) + length(data[,columnDate])
-
-  timeliness <- length(data[,columnDate]) / totaltimes
 
   return(timeliness)
 }
