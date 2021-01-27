@@ -177,7 +177,7 @@ Moderation<-function(data){ #aplica función extremos a todas las variables (col
 
 # Timeliness --------------------------------------------------------------
 
-Timeliness<-function(data, columnDate, maxdif, units = 'secs'){
+Timeliness<-function(data, columnDate, maxdif, units){
   #se contempla 'secs', 'mins', 'hours', 'days', 'months'
 
   if(units == 'months'){
