@@ -1,0 +1,17 @@
+Package: dqts
+Type: Package
+Title: Assess Data Quality in Time Series
+Version: 0.1.0
+Author: Meritxell Gomez omella <meritxell.gomez.93@gmail.com>
+Maintainer: Meritxell Gomez omella <meritxell.gomez.93@gmail.com>
+Description: Provides information about the data quality for a univariate and multivariate time series. The results can be given by mnoving windows and the results can be shown in a plot.
+License: GPL-3
+Imports: 
+  magrittr,
+  ggplot2,
+  dplyr,
+  reshape2,
+  here
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.1.1
