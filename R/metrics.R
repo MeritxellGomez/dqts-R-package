@@ -225,6 +225,8 @@ generateReferenceData <- function(data){
   types <- lapply(types, function(x) if(length(x) != 1){x <- paste(x, collapse = " ")}else{x <- x})
   df<- data.frame(types, stringsAsFactors = FALSE)
 
+  colnames(df) <- colnames(mysample)
+
   return(df)
 
 }
