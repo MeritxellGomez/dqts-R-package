@@ -95,8 +95,8 @@ Range<-function(data, ranges){
 
 # Normality  --------------------------------------------------------------
 
-isoutofnoramlity<-function(data, metric){
-
+isoutofnormality<-function(data, metric){
+  browser()
   z <- ifelse(metric == 'Consistency', 1.28,
               ifelse(metric == 'Typicality', 1.96,
                      ifelse(metric == 'Moderation', 2.58, stop('Incorrect name of metric'))))
@@ -121,13 +121,22 @@ isoutofnoramlity<-function(data, metric){
 }
 
 Normality <- function(data, metric){
-
+  browser()
   out <- isoutofnormality(data, metric)
-  totalout <- length(unlist(out))
-  n<- length(which(!is.na(data)))
+
+  normbyvars <- list()
+  for(i in 1:length(out)){
+
+    aux <- length(out[[i]]) / length(which(!is.na(data[[names(out)[i]]])))
+
+    normbyvars[i] <- 1 - aux
+
+  }
+
+  names(normbyvars) <- names(out)
 
   #ratio to different NA elements
-  return(1 - (totalout / n))
+  return(mean(unlist(normbyvars)))
 
 }
 
