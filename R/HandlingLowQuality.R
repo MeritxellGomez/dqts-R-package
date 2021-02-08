@@ -14,7 +14,10 @@
 #' @examples
 handleDQ <- function(data, metric, columnDate = NULL, var_time_name=NULL, ranges = NULL, method = "mean", maxdif = NULL, units = NULL){
 
-  if(class(data) == 'ts'){data <- tsbox::ts_df(data)}
+  if(class(data) == 'ts'){
+    data <- tsbox::ts_df(data)
+    var_time_name <- 'time'
+  }
 
   if(is.null(columnDate) & is.null(var_time_name)){warning("date or time variable should be given")}
   else if(is.null(columnDate)){columnDate <- which(colnames(data) == var_time_name)}

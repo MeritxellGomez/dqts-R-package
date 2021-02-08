@@ -86,7 +86,7 @@ Range<-function(data, ranges){
 
   out <- isoutofrange(data, ranges)
   totalout <- length(unlist(out))
-  n<- length(which(!is.na(data)))
+  n<- sum(apply(as.matrix(data[,sapply(data, is.numeric)]), 2, function(x) length(which(!is.na(x)))))
 
   #ratio to different NA elements
   return(1 - (totalout / n))
