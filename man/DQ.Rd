@@ -14,10 +14,9 @@ DQ(
   ranges = NULL,
   weights = NULL,
   windows = FALSE,
-  cte = TRUE,
-  fixed = TRUE,
-  nint = 3,
-  by = 10
+  initialWindow = 60,
+  skip = 10,
+  fixedWindow = TRUE
 )
 }
 \arguments{
