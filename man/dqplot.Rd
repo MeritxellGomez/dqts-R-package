@@ -4,7 +4,7 @@
 \alias{dqplot}
 \title{Plot data quality metrics}
 \usage{
-dqplot(DQ, totalquality = FALSE)
+dqplot(DQ, totalquality = FALSE, normal = TRUE)
 }
 \arguments{
 \item{DQ}{A data frame with quality metrics as columns}

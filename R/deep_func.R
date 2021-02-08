@@ -62,6 +62,8 @@ deepTimeliness <- function(data, columnDate=NULL, var_time_name=NULL, maxdif, un
 
   if(units == 'months'){
     missing.amount <- round(((as.numeric(abs(waiting.time)))/maxdif)-1)
+  }else if(units == 'days'){
+    missing.amount <- trunc(((as.numeric(abs(waiting.time)))/maxdif))
   }else{
     missing.amount <- trunc(((as.numeric(abs(waiting.time)))/maxdif)-1)
   }
