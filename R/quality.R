@@ -17,7 +17,7 @@
 #' @return A data frame containing the values of all quality metrics in columns
 #' @importFrom magrittr %>%
 #' @export
-DQ <- function(data, columnDate = NULL, var_time_name = NULL, maxdif = NULL, units = 'secs', dataref = NULL, ranges = NULL, weights = NULL, windows=FALSE, cte=TRUE, fixed=TRUE, nint=3, by=10){
+DQ <- function(data, columnDate = NULL, var_time_name = NULL, maxdif = NULL, units = 'secs', dataref = NULL, ranges = NULL, weights = NULL, windows=FALSE, initialWindow = 60, skip = 10, fixedWindow = TRUE){
 
   if(class(data) == 'ts'){data <- tsbox::ts_df(data)}
 
@@ -55,7 +55,7 @@ DQ <- function(data, columnDate = NULL, var_time_name = NULL, maxdif = NULL, uni
   if(isFALSE(windows)){
     myquality <- quality(data, columnDate, maxdif, units, dataref, ranges, weights)
   }else{
-    minidf <- data %>% nrow() %>% wdwind(., cte, fixed, nint, by) %>% segwdw(data,.)
+    minidf <- data %>% nrow() %>% windowpartitions(., initialWindow, skip, fixedWindow) %>% segwdw(data,.)
     myquality <- do.call(rbind,lapply(minidf, function(x) quality(x, columnDate, maxdif, units, dataref, ranges, weights)))
   }
 
