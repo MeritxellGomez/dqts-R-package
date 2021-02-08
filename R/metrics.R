@@ -95,7 +95,7 @@ Range<-function(data, ranges){
 
 # Normality  --------------------------------------------------------------
 
-outofnoramlity<-function(data, metric){
+isoutofnoramlity<-function(data, metric){
 
   z <- ifelse(metric == 'Consistency', 1.28,
               ifelse(metric == 'Typicality', 1.96,
@@ -120,9 +120,15 @@ outofnoramlity<-function(data, metric){
 
 }
 
-Normality<-function(data, metric){ #cambiar metric por Consistency, Typicality o Moderation
-  nrm<-apply(as.matrix(data[,sapply(data, is.numeric)]), 2, function(x) normal(x, metric))
-  return(sum(as.numeric(nrm))/length(nrm)) #hace la media de todos los extemos de cada variable
+Normality <- function(data, metric){
+
+  out <- isoutofnormality(data, metric)
+  totalout <- length(unlist(out))
+  n<- length(which(!is.na(data)))
+
+  #ratio to different NA elements
+  return(1 - (totalout / n))
+
 }
 
 
