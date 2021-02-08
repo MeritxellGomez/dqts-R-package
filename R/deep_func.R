@@ -29,6 +29,7 @@ deepDQ <- function(data, metric, columnDate=NULL, var_time_name = NULL, position
   if(metric == "TimeUniqueness"){deepdf <- deepTimeUniqueness(data, var_time_name)}
   #if(metric == "Conformity"){deepdf <- deepConformity(data, dataref)}
   if(metric == "Range"){deepdf <- deepRange(data, ranges, var_time_name, position)}
+  if(metric == "Consistency" | metric == 'Typicality' | metric == 'Moderation'){deepdf <- deepNormality(data, metric = metric, var_time_name, position)}
   #añadir todas las otras metricas
 
   return(deepdf)
@@ -207,3 +208,21 @@ deepRange <- function(data, ranges, var_time_name, position){
 }
 
 
+
+
+
+
+# Normality ---------------------------------------------------------------
+
+deepNormality <- function(data, metric, var_time_name, position){
+
+  z <- ifelse(metric == 'Consistency', 1.28,
+              ifelse(metric == 'Typicality', 1.96,
+                     ifelse(metric == 'Moderation', 2.58, stop('Incorrect name of metric'))))
+
+
+
+
+
+
+}
