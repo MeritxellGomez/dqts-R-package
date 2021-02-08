@@ -86,7 +86,7 @@ Range<-function(data, ranges){
 
   out <- isoutofrange(data, ranges)
   totalout <- length(unlist(out))
-  n<- sum(apply(as.matrix(data[,sapply(data, is.numeric)]), 2, function(x) length(which(!is.na(x)))))
+  n<- length(which(!is.na(data)))
 
   #ratio to different NA elements
   return(1 - (totalout / n))
@@ -187,14 +187,16 @@ Timeliness<-function(data, columnDate, maxdif, units){
     units2 <- units
   }
 
-  dif<-diff(data[,columnDate])
+  dif <- diff(data[,columnDate])
 
-  outdif<-length(which(dif>maxdif))
+  dif <- as.numeric(dif)
+
+  outdif <- length(which(dif > maxdif))
 
   if(outdif == 0){
     timeliness <- 1
   }else{
-    pos <- which(dif>maxdif)
+    pos <- which(dif > maxdif)
     loss.start <- data[pos,columnDate]
     loss.finish <- data[pos+1,columnDate]
 
@@ -202,7 +204,10 @@ Timeliness<-function(data, columnDate, maxdif, units){
 
     if(units == 'months'){
       missing.amount <- round(((as.numeric(abs(waiting.time)))/maxdif)-1)
-    }else{
+    }else if(units == 'days'){
+      missing.amount <- trunc(((as.numeric(abs(waiting.time)))/maxdif))
+    }
+    else{
       missing.amount <- trunc(((as.numeric(abs(waiting.time)))/maxdif)-1)
     }
 

@@ -1,9 +1,12 @@
-qualitybarplot <- function(DQ, totalquality = FALSE){
+qualitybarplot <- function(DQ, totalquality, normal){
 
-  if(totalquality==FALSE){DQ<-DQ[-length(DQ)]}
+  library(dplyr)
+
+  if(totalquality == FALSE){DQ <- DQ %>%  select(-DataQuality)}
+  if(normal == FALSE){DQ <- DQ %>% select(-c(Consistency, Typicality, Moderation))}
 
   #delete date variables
-  DQ <- DQ[,-c(1:2)]
+  DQ <- DQ %>% select(-c(InitialDate, FinalDate))
 
   df.quality <- data.frame(id=seq(1,length(DQ)),
                            metric = names(DQ),
@@ -20,9 +23,14 @@ qualitybarplot <- function(DQ, totalquality = FALSE){
   return(g)
 }
 
-movDQplot <- function(movingDQ, totalquality=FALSE){
+movDQplot <- function(movingDQ, totalquality, normal){
 
   library(reshape2)
+
+  library(dplyr)
+
+  if(totalquality == FALSE){movingDQ <- movingDQ %>%  select(-DataQuality)}
+  if(normal == FALSE){movingDQ <- movingDQ %>% select(-c(Consistency, Typicality, Moderation))}
 
   d <- melt(movingDQ, id.vars=c("InitialDate", "FinalDate"))
 
@@ -44,15 +52,15 @@ movDQplot <- function(movingDQ, totalquality=FALSE){
 #'
 #' @return Plot of the quality metric values
 #' @export
-dqplot <- function(DQ, totalquality = FALSE){
+dqplot <- function(DQ, totalquality = FALSE, normal = TRUE){
 
   if(nrow(DQ) == 1){
 
-    qualitybarplot(DQ, totalquality)
+    qualitybarplot(DQ, totalquality, normal)
 
   }else{
 
-    movDQplot(DQ, totalquality)
+    movDQplot(DQ, totalquality, normal)
 
   }
 
