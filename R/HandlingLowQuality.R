@@ -155,6 +155,7 @@ HLRange <- function(data, ranges, method = 'mean'){
   }else if(method == 'maxmin'){
     data <- imputeRangesMaxMin(data, ranges, ind, listout)
   }else if(method == 'KNPTS'){
+    #podemos ponerlos a NA y luego hacer imputacion
     data <- imputeRangesKNPTS(data, ranges, ind, listout)
   }else{
     data <- 'Method not correct'
