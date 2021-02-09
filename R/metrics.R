@@ -96,10 +96,10 @@ Range<-function(data, ranges){
 # Normality  --------------------------------------------------------------
 
 isoutofnormality<-function(data, metric){
-  browser()
-  z <- ifelse(metric == 'Consistency', 1.28,
-              ifelse(metric == 'Typicality', 1.96,
-                     ifelse(metric == 'Moderation', 2.58, stop('Incorrect name of metric'))))
+
+  z <- ifelse(metric == 'Consistency', qnorm(0.975),
+              ifelse(metric == 'Typicality', qnorm(0.9),
+                     ifelse(metric == 'Moderation', qnorm(0.995), stop('Incorrect name of metric'))))
 
   data <- data %>% dplyr::select_if(is.numeric)
   check <- list()
