@@ -124,7 +124,7 @@ isoutofnormality<-function(data, metric){
   for (i in 1:ncol(data)){
 
       n <- length(data[,i])
-      variable <- data[, i] %>% dplyr::sample(., size = trunc(0.3*n))
+      variable <- data[, i] %>% sample(., size = trunc(0.3*n))
 
       lower<-mean(na.omit(variable))-z*sd(na.omit(variable))
       upper<-mean(na.omit(variable))+z*sd(na.omit(variable))
