@@ -27,7 +27,7 @@ deepDQ <- function(data, metric, columnDate=NULL, var_time_name = NULL, position
   if(metric == "Completeness"){deepdf <- deepCompleteness(data, var_time_name, position)}
   if(metric == "Timeliness"){deepdf <- deepTimeliness(data, columnDate, var_time_name, maxdif, units)}
   if(metric == "TimeUniqueness"){deepdf <- deepTimeUniqueness(data, var_time_name)}
-  #if(metric == "Conformity"){deepdf <- deepConformity(data, dataref)}
+  if(metric == "Formats" | metric == "Names"){deepdf <- deepConformity(data, dataref,metric)}
   if(metric == "Range"){deepdf <- deepRange(data, ranges, var_time_name, position)}
   if(metric == "Consistency" | metric == 'Typicality' | metric == 'Moderation'){deepdf <- deepNormality(data, metric = metric, var_time_name, position)}
   #añadir todas las otras metricas
@@ -169,15 +169,32 @@ deepTimeUniqueness <- function(data, var_time_name){
 
 # Conformity --------------------------------------------------------------
 
-deepConformity <- function(data, dataref){
+deepConformity <- function(data, dataref, metric){
 
-  if(is.null(dataref))stop('a reference data frame must be entered to compare')
+  if(metric == 'Formats'){
 
-  compare <- list()
-  compare[['original data']] <- apply(data, 2, class)
-  compare[['reference data']] <- apply(dataref, 2, class)
+    formats <- lapply(data, class)
+    formats <- lapply(formats, function(x) if(length(x) != 1){x <- paste(x, collapse = " ")}else{x <- x})
+    formats <- data.frame(formats, stringsAsFactors = FALSE)
 
-  return(compare)
+    df <- data.frame(Reference = t(dataref), Data = t(formats), stringsAsFactors = FALSE)
+
+  }
+
+  if(metric == 'Names'){
+
+    col <- colnames(data)
+    colref <- colnames(dataref)
+
+    df <- data.frame(Reference = colref, Data = col)
+
+  }
+
+  logicals <- !apply(df, 1, function(x) x[1] == x[2])
+
+  deep_conf <- df[logicals,]
+
+  return(deep_conf)
 
 }
 
