@@ -24,13 +24,27 @@ deepDQ <- function(data, metric, columnDate=NULL, var_time_name = NULL, position
   else if(is.null(columnDate)){columnDate <- which(colnames(data) == var_time_name)}
   else if(is.null(var_time_name)){var_time_name <- colnames(data)[columnDate]}
 
+  if(is.null(dataref)){
+    warning('Reference data frame should be given. A sample of original data has been taken as reference data')
+    dataref <- generateReferenceData(data)
+  }
+
+  if(is.null(ranges)){
+    warning('Range data frame should be given. The maximum and minimum values from a sample of original data have been taken as range data')
+    ranges <- generateRangeData(data)
+  }
+
+  if(is.null(maxdif)){ #if maxdif is null, then the most frequent value is assigned
+    warning('Maxdif should be given. An estimation of maxdif value is calculated from a sample of original data')
+    maxdif <- generateMaxDif(data, columnDate)
+  }
+
   if(metric == "Completeness"){deepdf <- deepCompleteness(data, var_time_name, position)}
   if(metric == "Timeliness"){deepdf <- deepTimeliness(data, columnDate, var_time_name, maxdif, units)}
   if(metric == "TimeUniqueness"){deepdf <- deepTimeUniqueness(data, var_time_name)}
   if(metric == "Formats" | metric == "Names"){deepdf <- deepConformity(data, dataref,metric)}
   if(metric == "Range"){deepdf <- deepRange(data, ranges, var_time_name, position)}
   if(metric == "Consistency" | metric == 'Typicality' | metric == 'Moderation'){deepdf <- deepNormality(data, metric = metric, var_time_name, position)}
-  #añadir todas las otras metricas
 
   return(deepdf)
 
