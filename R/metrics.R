@@ -56,7 +56,7 @@ TimeUniqueness <- function(data, columnDate){
 
 generateRangeData <- function(data){
 
-  mysample <- data[sample(nrow(data), round(0.4*nrow(data))),]
+  mysample <- data[sample(nrow(data), round(0.3*nrow(data))),]
 
   mysample[, sapply(mysample, is.factor)] <- sapply(mysample[,sapply(mysample, is.factor)], as.character)
 
@@ -126,7 +126,10 @@ isoutofnormality<-function(data, metric){
 
       set.seed(111)
       n <- length(data[,i])
+
+      #decidir cual es mejor
       variable <- sample(data[,i], size = trunc(0.3*n))
+      #variable <- data[1:(trunc(0.3*n)),i]
 
       lower<-mean(na.omit(variable))-z*sd(na.omit(variable))
       upper<-mean(na.omit(variable))+z*sd(na.omit(variable))
@@ -161,6 +164,19 @@ Normality <- function(data, metric){
 
 
 # Timeliness --------------------------------------------------------------
+
+generateMaxDif <- function(data, columnDate){
+
+  timevar <- data[,columnDate]
+  timevarsample <- sample(timevar, size = trunc(0.3*length(timevar)))
+
+  diffs <- diff(timevarsample)
+  uniq <- unique(diffs)
+  maxdif <- uniq[which.max(tabulate(match(diffs, uniq)))]
+
+  return(maxdif)
+
+}
 
 Timeliness<-function(data, columnDate, maxdif, units){
   #se contempla 'secs', 'mins', 'hours', 'days', 'months'
@@ -209,7 +225,7 @@ Timeliness<-function(data, columnDate, maxdif, units){
 # Conformity --------------------------------------------------------------
 generateReferenceData <- function(data){
 
-  mysample <- data[sample(nrow(data), round(0.4*nrow(data))),]
+  mysample <- data[sample(nrow(data), round(0.3*nrow(data))),]
 
   types <- lapply(mysample, class)
   types <- lapply(types, function(x) if(length(x) != 1){x <- paste(x, collapse = " ")}else{x <- x})
@@ -267,7 +283,7 @@ quality<-function(data, columnDate, maxdif, units, dataref, ranges, weights){
 
   range<-Range(data, ranges)
 
-  if(w[c(6,7,8)]==0){
+  if(w[6]==0 & w[7] == 0 & w[8] == 0){
     cons <- 0
     typ <- 0
     mod <- 0

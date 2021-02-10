@@ -47,9 +47,8 @@ DQ <- function(data, columnDate = NULL, var_time_name = NULL, maxdif = NULL, uni
   }
 
   if(is.null(maxdif)){ #if maxdif is null, then the most frequent value is assigned
-    diffs <- diff(data[,columnDate])
-    uniq <- unique(diffs)
-    maxdif <- uniq[which.max(tabulate(match(diffs, uniq)))]
+    warning('Maxdif should be given. An estimation of maxdif value is calculated from a sample of original data')
+    maxdif <- generateMaxDif(data, columnDate)
   }
 
   if(is.null(weights)){
