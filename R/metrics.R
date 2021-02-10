@@ -56,7 +56,7 @@ TimeUniqueness <- function(data, columnDate){
 
 generateRangeData <- function(data){
 
-  mysample <- data[sample(nrow(data), round(0.4*nrow(data))),]
+  mysample <- data[sample(nrow(data), round(0.3*nrow(data))),]
 
   mysample[, sapply(mysample, is.factor)] <- sapply(mysample[,sapply(mysample, is.factor)], as.character)
 
@@ -70,7 +70,6 @@ generateRangeData <- function(data){
 }
 
 isoutofrange <- function(data, ranges){
-
   check<-list()
   for (i in 1:ncol(data)){
     if(is.numeric(data[,i])){
@@ -94,88 +93,90 @@ Range<-function(data, ranges){
 
 
 
-# Consistency -------------------------------------------------------------
+# Normality  --------------------------------------------------------------
 
-consistent<-function(variable){
+#TRUE if some variables are normal
+normalvars <- function(data){
 
-  n<-length(variable)
-  variable <- variable[1:trunc(n/3)]
+  set.seed(111)
+  pvalues <- data %>% dplyr::select_if(is.numeric) %>%
+    dplyr::sample_n(., size = trunc(0.3*nrow(data))) %>%
+    apply(., 2, function(x) shapiro.test(x)$p.value)
 
-  mtemp<-mean(na.omit(variable))
-  sdtemp<-sd(na.omit(variable))
+  condition <- length(which(pvalues > 0.05)) > 0
 
-  m<-mtemp-1.28*sdtemp
-  M<-mtemp+1.28*sdtemp
+  return(condition)
 
-  lower<-which(variable<m)
-  upper<-which(variable>M)
-
-  incons<-length(lower)+length(upper)
-  return(1-(incons/length(variable)))
 }
 
-Consistency<-function(data){
-  co<-apply(as.matrix(data[,sapply(data, is.numeric)]), 2, consistent)
-  return(sum(as.numeric(co))/length(co))
+isoutofnormality<-function(data, metric){
+
+  z <- ifelse(metric == 'Consistency', qnorm(0.9),
+              ifelse(metric == 'Typicality', qnorm(0.975),
+                     ifelse(metric == 'Moderation', qnorm(0.995), stop('Incorrect name of metric'))))
+
+  #only in numerical and normal variables
+  data <- data %>% dplyr::select_if(is.numeric)
+  pvalues <- apply(data, 2, function(x) shapiro.test(x)$p.value)
+  data <- data[,pvalues > 0.05]
+
+  check <- list()
+
+  for (i in 1:ncol(data)){
+
+      set.seed(111)
+      n <- length(data[,i])
+
+      #decidir cual es mejor
+      variable <- sample(data[,i], size = trunc(0.3*n))
+      #variable <- data[1:(trunc(0.3*n)),i]
+
+      lower<-mean(na.omit(variable))-z*sd(na.omit(variable))
+      upper<-mean(na.omit(variable))+z*sd(na.omit(variable))
+
+      aux<-which(data[,i] < lower | data[,i] > upper)
+      check[[colnames(data)[i]]] <- aux
+  }
+
+  return(check)
+
 }
 
+Normality <- function(data, metric){
 
+  out <- isoutofnormality(data, metric)
 
-# Typicality --------------------------------------------------------------
+  normbyvars <- list()
+  for(i in 1:length(out)){
 
-typical<-function(variable){
+    aux <- length(out[[i]]) / length(which(!is.na(data[[names(out)[i]]])))
 
-  n<-length(variable)
-  variable <- variable[1:trunc(n/3)]
+    normbyvars[i] <- 1 - aux
 
-  mtemp<-mean(na.omit(variable))
-  sdtemp<-sd(na.omit(variable))
+  }
 
-  m<-mtemp-1.96*sdtemp
-  M<-mtemp+1.96*sdtemp
+  names(normbyvars) <- names(out)
 
-  lower<-which(variable<m)
-  upper<-which(variable>M)
+  #ratio to different NA elements
+  return(mean(unlist(normbyvars)))
 
-  atip<-length(lower)+length(upper)
-
-  return(1-(atip/length(variable)))
-}
-
-Typicality<-function(data){ #aplica función atípicos a todas las variables (columnas) de data
-  at<-apply(as.matrix(data[,sapply(data, is.numeric)]), 2, typical)
-  return(sum(as.numeric(at))/length(at)) #hace la media de todos los atipicos de cada variable
-}
-
-
-# Moderation --------------------------------------------------------------
-
-moderate<-function(variable){
-
-  n<-length(variable)
-  variable <- variable[1:trunc(n/3)]
-
-  mtemp<-mean(na.omit(variable))
-  sdtemp<-sd(na.omit(variable))
-
-  m<-mtemp-2.59*sdtemp
-  M<-mtemp+2.59*sdtemp
-
-  lower<-which(variable<m)
-  upper<-which(variable>M)
-
-  extr<-length(lower)+length(upper)
-
-  return(1-(extr/length(variable)))
-}
-
-Moderation<-function(data){ #aplica función extremos a todas las variables (columnas) de data
-  moder<-apply(as.matrix(data[,sapply(data, is.numeric)]), 2, moderate)
-  return(sum(as.numeric(moder))/length(moder)) #hace la media de todos los extemos de cada variable
 }
 
 
 # Timeliness --------------------------------------------------------------
+
+generateMaxDif <- function(data, columnDate){
+
+  timevar <- data[,columnDate]
+  timevarsample <- sample(timevar, size = trunc(0.3*length(timevar)))
+
+  diffs <- diff(timevarsample)
+  uniq <- unique(diffs)
+  maxdif <- uniq[which.max(tabulate(match(diffs, uniq)))]
+
+  return(maxdif)
+
+}
 
 Timeliness<-function(data, columnDate, maxdif, units){
   #se contempla 'secs', 'mins', 'hours', 'days', 'months'
@@ -224,7 +225,7 @@ Timeliness<-function(data, columnDate, maxdif, units){
 # Conformity --------------------------------------------------------------
 generateReferenceData <- function(data){
 
-  mysample <- data[sample(nrow(data), round(0.4*nrow(data))),]
+  mysample <- data[sample(nrow(data), round(0.3*nrow(data))),]
 
   types <- lapply(mysample, class)
   types <- lapply(types, function(x) if(length(x) != 1){x <- paste(x, collapse = " ")}else{x <- x})
@@ -270,11 +271,7 @@ Names <- function(data, dataref){
 
 # Quality -----------------------------------------------------------------
 
-quality<-function(data, columnDate, maxdif, units, dataref, ranges=NULL, weights=NULL){
-
-  if(is.null(weights)){
-    weights<-c(rep((1/11),11))
-  }
+quality<-function(data, columnDate, maxdif, units, dataref, ranges, weights){
 
   w<-weights
 
@@ -286,9 +283,15 @@ quality<-function(data, columnDate, maxdif, units, dataref, ranges=NULL, weights
 
   range<-Range(data, ranges)
 
-  cons<-Consistency(data)
-  typ<-Typicality(data)
-  mod<-Moderation(data)
+  if(w[6]==0 & w[7] == 0 & w[8] == 0){
+    cons <- 0
+    typ <- 0
+    mod <- 0
+  }else{
+    cons<-Normality(data, 'Consistency')
+    typ<-Normality(data, 'Typicality')
+    mod<-Normality(data, 'Moderation')
+  }
 
   time<-Timeliness(data,columnDate, maxdif, units)
 
