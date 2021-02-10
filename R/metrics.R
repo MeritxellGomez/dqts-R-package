@@ -97,8 +97,8 @@ Range<-function(data, ranges){
 
 isoutofnormality<-function(data, metric){
 
-  z <- ifelse(metric == 'Consistency', qnorm(0.975),
-              ifelse(metric == 'Typicality', qnorm(0.9),
+  z <- ifelse(metric == 'Consistency', qnorm(0.9),
+              ifelse(metric == 'Typicality', qnorm(0.975),
                      ifelse(metric == 'Moderation', qnorm(0.995), stop('Incorrect name of metric'))))
 
   data <- data %>% dplyr::select_if(is.numeric)

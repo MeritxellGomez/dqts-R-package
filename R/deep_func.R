@@ -216,8 +216,8 @@ deepRange <- function(data, ranges, var_time_name, position){
 
 deepNormality <- function(data, metric, var_time_name, position){
 
-  z <- ifelse(metric == 'Consistency', qnorm(0.975),
-              ifelse(metric == 'Typicality', qnorm(0.9),
+  z <- ifelse(metric == 'Consistency', qnorm(0.9),
+              ifelse(metric == 'Typicality', qnorm(0.975),
                      ifelse(metric == 'Moderation', qnorm(0.995), stop('Incorrect name of metric'))))
 
 
