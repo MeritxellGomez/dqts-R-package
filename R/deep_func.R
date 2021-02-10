@@ -24,13 +24,27 @@ deepDQ <- function(data, metric, columnDate=NULL, var_time_name = NULL, position
   else if(is.null(columnDate)){columnDate <- which(colnames(data) == var_time_name)}
   else if(is.null(var_time_name)){var_time_name <- colnames(data)[columnDate]}
 
+  if(is.null(dataref)){
+    warning('Reference data frame should be given. A sample of original data has been taken as reference data')
+    dataref <- generateReferenceData(data)
+  }
+
+  if(is.null(ranges)){
+    warning('Range data frame should be given. The maximum and minimum values from a sample of original data have been taken as range data')
+    ranges <- generateRangeData(data)
+  }
+
+  if(is.null(maxdif)){ #if maxdif is null, then the most frequent value is assigned
+    warning('Maxdif should be given. An estimation of maxdif value is calculated from a sample of original data')
+    maxdif <- generateMaxDif(data, columnDate)
+  }
+
   if(metric == "Completeness"){deepdf <- deepCompleteness(data, var_time_name, position)}
   if(metric == "Timeliness"){deepdf <- deepTimeliness(data, columnDate, var_time_name, maxdif, units)}
   if(metric == "TimeUniqueness"){deepdf <- deepTimeUniqueness(data, var_time_name)}
-  #if(metric == "Conformity"){deepdf <- deepConformity(data, dataref)}
+  if(metric == "Formats" | metric == "Names"){deepdf <- deepConformity(data, dataref,metric)}
   if(metric == "Range"){deepdf <- deepRange(data, ranges, var_time_name, position)}
   if(metric == "Consistency" | metric == 'Typicality' | metric == 'Moderation'){deepdf <- deepNormality(data, metric = metric, var_time_name, position)}
-  #añadir todas las otras metricas
 
   return(deepdf)
 
@@ -169,15 +183,32 @@ deepTimeUniqueness <- function(data, var_time_name){
 
 # Conformity --------------------------------------------------------------
 
-deepConformity <- function(data, dataref){
+deepConformity <- function(data, dataref, metric){
 
-  if(is.null(dataref))stop('a reference data frame must be entered to compare')
+  if(metric == 'Formats'){
 
-  compare <- list()
-  compare[['original data']] <- apply(data, 2, class)
-  compare[['reference data']] <- apply(dataref, 2, class)
+    formats <- lapply(data, class)
+    formats <- lapply(formats, function(x) if(length(x) != 1){x <- paste(x, collapse = " ")}else{x <- x})
+    formats <- data.frame(formats, stringsAsFactors = FALSE)
 
-  return(compare)
+    df <- data.frame(Reference = t(dataref), Data = t(formats), stringsAsFactors = FALSE)
+
+  }
+
+  if(metric == 'Names'){
+
+    col <- colnames(data)
+    colref <- colnames(dataref)
+
+    df <- data.frame(Reference = colref, Data = col)
+
+  }
+
+  logicals <- !apply(df, 1, function(x) x[1] == x[2])
+
+  deep_conf <- df[logicals,]
+
+  return(deep_conf)
 
 }
 
