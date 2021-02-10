@@ -52,6 +52,10 @@ DQ <- function(data, columnDate = NULL, var_time_name = NULL, maxdif = NULL, uni
     maxdif <- uniq[which.max(tabulate(match(diffs, uniq)))]
   }
 
+  if(is.null(weights)){
+    weights<-c(rep((1/11),11))
+  }
+
   if(!normalvars(data)){
     weigths[c(6,7,8)] <- 0
     weigths[c(1:5,9:11)] <- 1/8

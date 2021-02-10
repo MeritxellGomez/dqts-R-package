@@ -99,7 +99,7 @@ Range<-function(data, ranges){
 normalvars <- function(data){
 
   pvalues <- data %>% dplyr::select_if(is.numeric) %>%
-    sample_n(., size = trunc(0.3*nrow(data))) %>%
+    dplyr::sample_n(., size = trunc(0.3*nrow(data))) %>%
     apply(., 2, function(x) shapiro.test(x)$p.value)
 
   condition <- length(which(pvalues > 0.05)) > 0
@@ -124,7 +124,7 @@ isoutofnormality<-function(data, metric){
   for (i in 1:ncol(data)){
 
       n <- length(data[,i])
-      variable <- data[, i] %>% sample(., size = trunc(0.3*n))
+      variable <- data[, i] %>% dplyr::sample(., size = trunc(0.3*n))
 
       lower<-mean(na.omit(variable))-z*sd(na.omit(variable))
       upper<-mean(na.omit(variable))+z*sd(na.omit(variable))
@@ -253,11 +253,7 @@ Names <- function(data, dataref){
 
 # Quality -----------------------------------------------------------------
 
-quality<-function(data, columnDate, maxdif, units, dataref, ranges=NULL, weights=NULL){
-
-  if(is.null(weights)){
-    weights<-c(rep((1/11),11))
-  }
+quality<-function(data, columnDate, maxdif, units, dataref, ranges, weights){
 
   w<-weights
 
