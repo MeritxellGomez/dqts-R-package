@@ -13,7 +13,7 @@
 #' @export
 #'
 #' @examples
-deepDQ <- function(data, metric, columnDate=NULL, var_time_name = NULL, position = FALSE, dataref=NULL, ranges = NULL, maxdif, units="secs"){
+deepDQ <- function(data, metric, columnDate=NULL, var_time_name = NULL, position = FALSE, dataref=NULL, ranges = NULL, maxdif = NULL, units="secs"){
 
   if(class(data) == 'ts'){
     data <- tsbox::ts_df(data)
@@ -32,11 +32,6 @@ deepDQ <- function(data, metric, columnDate=NULL, var_time_name = NULL, position
   if(is.null(ranges)){
     warning('Range data frame should be given. The maximum and minimum values from a sample of original data have been taken as range data')
     ranges <- generateRangeData(data)
-  }
-
-  if(is.null(maxdif)){ #if maxdif is null, then the most frequent value is assigned
-    warning('Maxdif should be given. An estimation of maxdif value is calculated from a sample of original data')
-    maxdif <- generateMaxDif(data, columnDate)
   }
 
   if(metric == "Completeness"){deepdf <- deepCompleteness(data, var_time_name, position)}
