@@ -112,7 +112,11 @@ isoutofnormality<-function(data, metric){
               ifelse(metric == 'Typicality', qnorm(0.975),
                      ifelse(metric == 'Moderation', qnorm(0.995), stop('Incorrect name of metric'))))
 
+  #only in numerical and normal variables
   data <- data %>% dplyr::select_if(is.numeric)
+  pvalues <- apply(data, 2, function(x) shapiro.test(x)$p.value)
+  data <- data[,pvalues > 0.05]
+
   check <- list()
 
   for (i in 1:ncol(data)){
