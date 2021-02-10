@@ -267,9 +267,15 @@ quality<-function(data, columnDate, maxdif, units, dataref, ranges, weights){
 
   range<-Range(data, ranges)
 
-  cons<-Normality(data, 'Consistency')
-  typ<-Normality(data, 'Typicality')
-  mod<-Normality(data, 'Moderation')
+  if(w[c(6,7,8)]==0){
+    cons <- 0
+    typ <- 0
+    mod <- 0
+  }else{
+    cons<-Normality(data, 'Consistency')
+    typ<-Normality(data, 'Typicality')
+    mod<-Normality(data, 'Moderation')
+  }
 
   time<-Timeliness(data,columnDate, maxdif, units)
 
