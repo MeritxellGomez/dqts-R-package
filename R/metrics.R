@@ -95,6 +95,17 @@ Range<-function(data, ranges){
 
 # Normality  --------------------------------------------------------------
 
+#TRUE if some variables are normal
+normalvars <- function(data){
+
+  pvalues <- data %>% dplyr::select_if(is.numeric) %>% apply(., 2, function(x) shapiro.test(x)$p.value)
+
+  condition <- length(which(pvalues > 0.05)) > 0
+
+  return(condition)
+
+}
+
 isoutofnormality<-function(data, metric){
 
   z <- ifelse(metric == 'Consistency', qnorm(0.9),
