@@ -52,6 +52,11 @@ DQ <- function(data, columnDate = NULL, var_time_name = NULL, maxdif = NULL, uni
     maxdif <- uniq[which.max(tabulate(match(diffs, uniq)))]
   }
 
+  if(!normalvars(data)){
+    weigths[c(6,7,8)] <- 0
+    weigths[c(1:5,9:11)] <- 1/8
+  }
+
   if(isFALSE(windows)){
     myquality <- quality(data, columnDate, maxdif, units, dataref, ranges, weights)
   }else{
