@@ -99,9 +99,16 @@ Range<-function(data, ranges){
 normalvars <- function(data){
 
   set.seed(111)
-  pvalues <- data %>% dplyr::select_if(is.numeric) %>%
-    dplyr::sample_n(., size = trunc(0.3*nrow(data))) %>%
-    apply(., 2, function(x) shapiro.test(x)$p.value)
+  sampledata <- data %>% dplyr::select_if(is.numeric) %>%
+    dplyr::sample_n(., size = trunc(0.3*nrow(data)))
+
+  if(nrow(sampledata) > 4999){
+    sampledata1 <- as.data.frame(sampledata[1:4999,])
+    colnames(sampledata1) <- colnames(sampledata)
+    sampledata <- sampledata1
+  }
+
+  pvalues <- apply(sampledata, 2, function(x) shapiro.test(x)$p.value)
 
   condition <- length(which(pvalues > 0.05)) > 0
 
@@ -117,6 +124,13 @@ isoutofnormality<-function(data, metric){
 
   #only in numerical and normal variables
   data <- data %>% dplyr::select_if(is.numeric)
+
+  if(nrow(data) > 4999){
+    data2 <- as.data.frame(data[1:4999,])
+    colnames(data2) <- colnames(data)
+    data <- data2
+  }
+
   pvalues <- apply(data, 2, function(x) shapiro.test(x)$p.value)
   data <- data[,pvalues > 0.05]
 
