@@ -26,9 +26,7 @@ handleDQ <- function(data, metric, columnDate = NULL, var_time_name=NULL, ranges
   if(metric == "Completeness"){HLCompleteness(data, method)}
   else if(metric == "TimeUniqueness"){HLTimeUniqueness(data, columnDate, var_time_name)}
   else if(metric == 'Range'){HLRange(data, ranges, method)}
-  else if(metric == 'Consistency'){HLConsistency(data)}
-  else if(metric == 'Typicality'){HLTypicality(data)}
-  else if(metric == 'Moderation'){HLModeration(data)}
+  else if(metric == 'Consistency' | metric == 'Typicality' | metric == 'Moderation'){HLNormality(data, metric)}
   else if(metric == "Timeliness"){HLTimeliness(data, columnDate, maxdif, units)}
   #else if(metric == "Conformity"){HLConformity(data)}
   else(stop('Incorrect metric name'))
@@ -157,6 +155,8 @@ HLRange <- function(data, ranges, method = 'mean'){
   }else if(method == 'KNPTS'){
     #podemos ponerlos a NA y luego hacer imputacion
     data <- imputeRangesKNPTS(data, ranges, ind, listout)
+  }else if(method == 'NA'){
+    data <- imputeRangesNA(data, ranges, ind, listout)
   }else{
     data <- 'Method not correct'
   }
@@ -186,6 +186,18 @@ imputeRangesMaxMin <- function(data, ranges, ind, listout){
 
 }
 
+imputeRangesNA <- function(data, ranges, ind, listout){
+
+  for(i in ind){
+
+    data[[names(listout)[i]]][listout[[i]]] <- NA
+
+  }
+
+  return(data)
+
+}
+
 imputeRangesKNPTS <- function(data, ranges, ind, listout){
 
   #darle una vuelta a ver si puedo aprovechar el de impute. Fijo que si
@@ -193,33 +205,20 @@ imputeRangesKNPTS <- function(data, ranges, ind, listout){
 }
 
 
-#habria que crear funciones comunes para las metricas de Range, Consistency, Typicality y Moderation
+# Handling Low Normality  ------------------------------------------------
+
+HLNormality <- function(data, metric){
+
+  z <- ifelse(metric == 'Consistency', qnorm(0.9),
+              ifelse(metric == 'Typicality', qnorm(0.975),
+                     ifelse(metric == 'Moderation', qnorm(0.995), stop('Incorrect name of metric'))))
 
 
+  listout <- isoutofnormality(data, metric)
 
-# Handling Low Consistency ------------------------------------------------
+  ind <- c(1:length(listout))[sapply(listout, function(x) !is.null(x))]
 
-HLConsistency <- function(data){
-
-  #lo mismo que con Range.
-
-}
-
-
-# Handling Low Typicality -------------------------------------------------
-
-HLTypicality <- function(data){
-
-  #lo mismo que con Range.
-
-}
-
-# Handling Low Moderation -------------------------------------------------
-
-HLModeration <- function(data){
-
-  #lo mismo que con Range.
-
+  a <- 4
 }
 
 
