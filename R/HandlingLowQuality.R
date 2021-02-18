@@ -24,7 +24,7 @@ handleDQ <- function(data, metric, columnDate = NULL, var_time_name=NULL, ranges
   else if(is.null(var_time_name)){var_time_name <- colnames(data)[columnDate]}
 
   if(metric == "Completeness"){HLCompleteness(data, method)}
-  else if(metric == "TimeUniqueness"){HLTimeUniqueness(data, columnDate, var_time_name)}
+  else if(metric == "TimeUniqueness"){HLTimeUniqueness(data, var_time_name, method)}
   else if(metric == 'Range'){HLRange(data, ranges, method)}
   else if(metric == 'Consistency' | metric == 'Typicality' | metric == 'Moderation'){HLNormality(data, metric)}
   else if(metric == "Timeliness"){HLTimeliness(data, columnDate, maxdif, units)}
@@ -35,8 +35,6 @@ handleDQ <- function(data, metric, columnDate = NULL, var_time_name=NULL, ranges
 
 
 # Handling Low Completeness -----------------------------------------------
-
-
 HLCompleteness <- function(data, method="mean"){
 
   nacol <- apply(data, 2, function(x) sum(is.na(x)))
@@ -66,14 +64,27 @@ HLCompleteness <- function(data, method="mean"){
 
 # Handling Time Uniqueness ------------------------------------------------
 
-HLTimeUniqueness <- function(data, columnDate, var_time_name){
+HLTimeUniqueness <- function(data, var_time_name, method){
 
   if(is.null(var_time_name)){stop('Incorrect time variable name. The name of the time variable have to be written as an argument')}
   if(isFALSE(var_time_name %in% colnames(data))){stop('Incorrect time variable name. The name entered does not match any variable in the data set')}
 
   dupl <- duplicated(data[[var_time_name]])
 
-  data <- data[!dupl,]
+  if(method == 'mean'){
+
+    datesdupl <- unique(data[[var_time_name]][dupl])
+    listdupl <- lapply(datesdupl, function(x) which(data[[var_time_name]] == x))
+    imp <- lapply(listdupl, function(y) data[y,] %>% select(-var_time_name) %>% apply(., 2, function(x) mean(x, na.rm = TRUE)))
+
+    #acabar esto. Ahora hay que meter los valores de imp en las posiciones de listdupl pero solo en las vars numericas
+
+
+  }else if(method == 'deletion'){
+
+    data <- data[!dupl,]
+
+  }else(stop('Incorrect name of method to handle low Time Uniqueness'))
 
   return(data)
 
