@@ -36,60 +36,6 @@ handleDQ <- function(data, metric, columnDate = NULL, var_time_name=NULL, ranges
 
 # Handling Low Completeness -----------------------------------------------
 
-idlist <- function(idvec){
-
-  idbreak <- which(diff(idvec) > 1)
-  idbreak <- c(idbreak, length(idvec))
-  n <- length(idbreak)
-
-  idlist <- list()
-
-  from <- 1
-
-  for(i in 1:n){
-
-    idlist[[i]] <- idvec[from:idbreak[i]]
-    from <- idbreak[i] + 1
-
-  }
-
-  return(idlist)
-
-}
-
-imputation <- function(var,method, idna){
-
-  if(method == "mean"){
-    estim <- impmean(var = var, idna = idna)
-  }else if(method == "KNPTS"){
-    estim <- impKNPTS(var = var, idna = idna, future = TRUE)
-  }else if(method == "mean2"){
-    estim <- impmean2(var = var, idna = idna, future = TRUE)
-  }else{
-    estim <- 0
-  }
-
-  return(estim)
-
-}
-
-
-imputena <- function(method, var){
-
-  idna <- which(is.na(var))
-  idnalist <- idlist(idna)
-
-  estim <- lapply(idnalist, function(x)imputation(var, method, x))
-
-  #estim va a ser una lista donde cada elemento es la estimacion de esos indices de NA
-
-
-
-  #repetir el proceso para cada intervalo de NA de la serie
-  #devolver una lista con los vectores de predicciones de length el numero de NA seguidos
-  return(estim)
-
-}
 
 HLCompleteness <- function(data, method="mean"){
 
