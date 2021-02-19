@@ -2,7 +2,7 @@
 #'
 #' The data set is entered and the name of the metric to be analyzed in depth is indicated. Data quality can be evaluated by variables or the values in which an error occurs can be shown.
 #'
-#' @param data The data frame to be analyzed
+#' @param data The data frame or time series to be analyzed
 #' @param metric The name of the metric to be analyzed
 #' @param var_time_name The name of the variable containing the date or time information
 #' @param position Logical argument. If TRUE date or time information is added to the results
@@ -13,7 +13,7 @@
 #' @export
 #'
 #' @examples
-deepDQ <- function(data, metric, columnDate=NULL, var_time_name = NULL, position = FALSE, dataref=NULL, ranges = NULL, maxdif, units="secs"){
+deepDQ <- function(data, metric, columnDate=NULL, var_time_name = NULL, position = FALSE, dataref=NULL, ranges = NULL, maxdif = NULL, units="secs"){
 
   if(class(data) == 'ts'){
     data <- tsbox::ts_df(data)
@@ -34,11 +34,6 @@ deepDQ <- function(data, metric, columnDate=NULL, var_time_name = NULL, position
     ranges <- generateRangeData(data)
   }
 
-  if(is.null(maxdif)){ #if maxdif is null, then the most frequent value is assigned
-    warning('Maxdif should be given. An estimation of maxdif value is calculated from a sample of original data')
-    maxdif <- generateMaxDif(data, columnDate)
-  }
-
   if(metric == "Completeness"){deepdf <- deepCompleteness(data, var_time_name, position)}
   if(metric == "Timeliness"){deepdf <- deepTimeliness(data, columnDate, var_time_name, maxdif, units)}
   if(metric == "TimeUniqueness"){deepdf <- deepTimeUniqueness(data, var_time_name)}
@@ -56,7 +51,7 @@ deepDQ <- function(data, metric, columnDate=NULL, var_time_name = NULL, position
 #study of timeliness. data is the set of values. columndate is an integer to indicate the position of the date variable
 #maxdif is an integer to indicate the maximum difference allowed between two dates
 #missing is a boolean: TRUE if we want to see all results and FALSE if we always want to see the missing intervals
-deepTimeliness <- function(data, columnDate=NULL, var_time_name=NULL, maxdif, units="secs"){
+deepTimeliness <- function(data, columnDate=NULL, var_time_name=NULL, maxdif, units){
 
   if(units == 'months'){
     maxdif <- 31
@@ -66,7 +61,8 @@ deepTimeliness <- function(data, columnDate=NULL, var_time_name=NULL, maxdif, un
   }
 
   date_vec <- data[[var_time_name]]
-  dif <- diff(date_vec)
+  n <- length(date_vec)
+  dif <- difftime(date_vec[2:n], date_vec[1:(n-1)], units = units)
 
   pos <- which(dif>maxdif)
 

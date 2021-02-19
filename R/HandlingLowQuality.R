@@ -24,11 +24,9 @@ handleDQ <- function(data, metric, columnDate = NULL, var_time_name=NULL, ranges
   else if(is.null(var_time_name)){var_time_name <- colnames(data)[columnDate]}
 
   if(metric == "Completeness"){HLCompleteness(data, method)}
-  else if(metric == "TimeUniqueness"){HLTimeUniqueness(data, columnDate, var_time_name)}
+  else if(metric == "TimeUniqueness"){HLTimeUniqueness(data, var_time_name, method)}
   else if(metric == 'Range'){HLRange(data, ranges, method)}
-  else if(metric == 'Consistency'){HLConsistency(data)}
-  else if(metric == 'Typicality'){HLTypicality(data)}
-  else if(metric == 'Moderation'){HLModeration(data)}
+  else if(metric == 'Consistency' | metric == 'Typicality' | metric == 'Moderation'){HLNormality(data, metric)}
   else if(metric == "Timeliness"){HLTimeliness(data, columnDate, maxdif, units)}
   #else if(metric == "Conformity"){HLConformity(data)}
   else(stop('Incorrect metric name'))
@@ -37,62 +35,6 @@ handleDQ <- function(data, metric, columnDate = NULL, var_time_name=NULL, ranges
 
 
 # Handling Low Completeness -----------------------------------------------
-
-idlist <- function(idvec){
-
-  idbreak <- which(diff(idvec) > 1)
-  idbreak <- c(idbreak, length(idvec))
-  n <- length(idbreak)
-
-  idlist <- list()
-
-  from <- 1
-
-  for(i in 1:n){
-
-    idlist[[i]] <- idvec[from:idbreak[i]]
-    from <- idbreak[i] + 1
-
-  }
-
-  return(idlist)
-
-}
-
-imputation <- function(var,method, idna){
-
-  if(method == "mean"){
-    estim <- impmean(var = var, idna = idna)
-  }else if(method == "KNPTS"){
-    estim <- impKNPTS(var = var, idna = idna, future = TRUE)
-  }else if(method == "mean2"){
-    estim <- impmean2(var = var, idna = idna, future = TRUE)
-  }else{
-    estim <- 0
-  }
-
-  return(estim)
-
-}
-
-
-imputena <- function(method, var){
-
-  idna <- which(is.na(var))
-  idnalist <- idlist(idna)
-
-  estim <- lapply(idnalist, function(x)imputation(var, method, x))
-
-  #estim va a ser una lista donde cada elemento es la estimacion de esos indices de NA
-
-
-
-  #repetir el proceso para cada intervalo de NA de la serie
-  #devolver una lista con los vectores de predicciones de length el numero de NA seguidos
-  return(estim)
-
-}
-
 HLCompleteness <- function(data, method="mean"){
 
   nacol <- apply(data, 2, function(x) sum(is.na(x)))
@@ -122,14 +64,27 @@ HLCompleteness <- function(data, method="mean"){
 
 # Handling Time Uniqueness ------------------------------------------------
 
-HLTimeUniqueness <- function(data, columnDate, var_time_name){
+HLTimeUniqueness <- function(data, var_time_name, method){
 
   if(is.null(var_time_name)){stop('Incorrect time variable name. The name of the time variable have to be written as an argument')}
   if(isFALSE(var_time_name %in% colnames(data))){stop('Incorrect time variable name. The name entered does not match any variable in the data set')}
 
   dupl <- duplicated(data[[var_time_name]])
 
-  data <- data[!dupl,]
+  if(method == 'mean'){
+
+    datesdupl <- unique(data[[var_time_name]][dupl])
+    listdupl <- lapply(datesdupl, function(x) which(data[[var_time_name]] == x))
+    imp <- lapply(listdupl, function(y) data[y,] %>% select(-var_time_name) %>% apply(., 2, function(x) mean(x, na.rm = TRUE)))
+
+    #acabar esto. Ahora hay que meter los valores de imp en las posiciones de listdupl pero solo en las vars numericas
+
+
+  }else if(method == 'deletion'){
+
+    data <- data[!dupl,]
+
+  }else(stop('Incorrect name of method to handle low Time Uniqueness'))
 
   return(data)
 
@@ -157,6 +112,8 @@ HLRange <- function(data, ranges, method = 'mean'){
   }else if(method == 'KNPTS'){
     #podemos ponerlos a NA y luego hacer imputacion
     data <- imputeRangesKNPTS(data, ranges, ind, listout)
+  }else if(method == 'NA'){
+    data <- imputeRangesNA(data, ranges, ind, listout)
   }else{
     data <- 'Method not correct'
   }
@@ -186,6 +143,18 @@ imputeRangesMaxMin <- function(data, ranges, ind, listout){
 
 }
 
+imputeRangesNA <- function(data, ranges, ind, listout){
+
+  for(i in ind){
+
+    data[[names(listout)[i]]][listout[[i]]] <- NA
+
+  }
+
+  return(data)
+
+}
+
 imputeRangesKNPTS <- function(data, ranges, ind, listout){
 
   #darle una vuelta a ver si puedo aprovechar el de impute. Fijo que si
@@ -193,33 +162,20 @@ imputeRangesKNPTS <- function(data, ranges, ind, listout){
 }
 
 
-#habria que crear funciones comunes para las metricas de Range, Consistency, Typicality y Moderation
+# Handling Low Normality  ------------------------------------------------
+
+HLNormality <- function(data, metric){
+
+  z <- ifelse(metric == 'Consistency', qnorm(0.9),
+              ifelse(metric == 'Typicality', qnorm(0.975),
+                     ifelse(metric == 'Moderation', qnorm(0.995), stop('Incorrect name of metric'))))
 
 
+  listout <- isoutofnormality(data, metric)
 
-# Handling Low Consistency ------------------------------------------------
+  ind <- c(1:length(listout))[sapply(listout, function(x) !is.null(x))]
 
-HLConsistency <- function(data){
-
-  #lo mismo que con Range.
-
-}
-
-
-# Handling Low Typicality -------------------------------------------------
-
-HLTypicality <- function(data){
-
-  #lo mismo que con Range.
-
-}
-
-# Handling Low Moderation -------------------------------------------------
-
-HLModeration <- function(data){
-
-  #lo mismo que con Range.
-
+  a <- 4
 }
 
 
