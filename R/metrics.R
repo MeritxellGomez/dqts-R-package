@@ -95,81 +95,85 @@ Range<-function(data, ranges){
 
 # Normality  --------------------------------------------------------------
 
-#TRUE if some variables are normal
-normalvars <- function(data){
-
-  set.seed(111)
-  sampledata <- data %>% dplyr::select_if(is.numeric) %>%
-    dplyr::sample_n(., size = trunc(0.3*nrow(data)))
-
-  if(nrow(sampledata) > 4999){
-    sampledata1 <- as.data.frame(sampledata[1:4999,])
-    colnames(sampledata1) <- colnames(sampledata)
-    sampledata <- sampledata1
-  }
-
-  pvalues <- apply(sampledata, 2, function(x) shapiro.test(x)$p.value)
-
-  condition <- length(which(pvalues > 0.05)) > 0
-
-  return(condition)
-
-}
-
-isoutofnormality<-function(data, metric){
+isoutofnormality<-function(data, metric, mean, sd){
 
   z <- ifelse(metric == 'Consistency', qnorm(0.9),
               ifelse(metric == 'Typicality', qnorm(0.975),
                      ifelse(metric == 'Moderation', qnorm(0.995), stop('Incorrect name of metric'))))
 
-  #only in numerical and normal variables
-  data <- data %>% dplyr::select_if(is.numeric)
-
-  if(nrow(data) > 4999){
-    data2 <- as.data.frame(data[1:4999,])
-    colnames(data2) <- colnames(data)
-    data <- data2
-  }
-
-  pvalues <- apply(data, 2, function(x) shapiro.test(x)$p.value)
-  data <- data[,pvalues > 0.05]
-
   check <- list()
 
   for (i in 1:ncol(data)){
 
-      set.seed(111)
-      n <- length(data[,i])
+    lower <- mean[i] - z*sd[i]
+    upper <- mean[i] + z*sd[i]
 
-      #decidir cual es mejor
-      variable <- sample(data[,i], size = trunc(0.3*n))
-      #variable <- data[1:(trunc(0.3*n)),i]
-
-      lower<-mean(na.omit(variable))-z*sd(na.omit(variable))
-      upper<-mean(na.omit(variable))+z*sd(na.omit(variable))
-
-      aux<-which(data[,i] < lower | data[,i] > upper)
-      check[[colnames(data)[i]]] <- aux
+    aux<-which(data[,i] < lower | data[,i] > upper)
+    check[[colnames(data)[i]]] <- aux
   }
 
   return(check)
 
 }
 
-Normality <- function(data, metric){
 
-  out <- isoutofnormality(data, metric)
+outofnormality <- function(data){
+
+  set.seed(111)
+  numericdata <- data %>% dplyr::select_if(is.numeric)
+
+  if(nrow(numericdata) > 300){
+    sampledata <- numericdata[1:(nrow(numericdata)/3),] %>% dplyr::sample_n(., size = trunc(0.3*nrow(data)))
+
+    if(nrow(sampledata) > 4999){
+      sampledata1 <- as.data.frame(sampledata[1:4999,])
+      colnames(sampledata1) <- colnames(sampledata)
+      sampledata <- sampledata1
+    }
+
+  }else{
+    sampledata <- numericdata[1:(nrow(numericdata)/3),]
+  }
+
+  pvalues <- apply(sampledata, 2, function(x) shapiro.test(x)$p.value)
+
+  if(length(which(pvalues > 0.05)) == 0){
+    out_normality <- NULL
+  }else{
+
+    namevars <- names(which(pvalues>0.05))
+
+    mean_normalvars <- apply(sampledata[namevars], 2, function(x) mean(x, na.rm = TRUE))
+    sd_normalvars <- apply(sampledata[namevars], 2, function(x) sd(x, na.rm = TRUE))
+
+
+    out_consistency <- isoutofnormality(data[namevars], metric = 'Consistency', mean = mean_normalvars, sd = sd_normalvars)
+    out_typicality <- isoutofnormality(data[namevars], metric = 'Typicality', mean = mean_normalvars, sd = sd_normalvars)
+    out_moderation <- isoutofnormality(data[namevars], metric = 'Moderation', mean = mean_normalvars, sd = sd_normalvars)
+
+    out_normality <- list(Consistency = out_consistency, Typicality = out_typicality, Moderation = out_moderation)
+
+  }
+
+  return(out_normality)
+
+}
+
+
+Normality <- function(data, outnormality, metric){
+
+  out_metric <- outnormality[[metric]]
 
   normbyvars <- list()
-  for(i in 1:length(out)){
+  for(i in 1:length(out_metric)){
 
-    aux <- length(out[[i]]) / length(which(!is.na(data[[names(out)[i]]])))
+    aux <- length(out_metric[[i]]) / length(which(!is.na(data[[names(out_metric)[i]]])))
 
     normbyvars[i] <- 1 - aux
 
   }
 
-  names(normbyvars) <- names(out)
+  names(normbyvars) <- colnames(data)
 
   #ratio to different NA elements
   return(mean(unlist(normbyvars)))
@@ -297,14 +301,19 @@ quality<-function(data, columnDate, maxdif, units, dataref, ranges, weights){
 
   range<-Range(data, ranges)
 
-  if(w[6]==0 & w[7] == 0 & w[8] == 0){
+  norm <- outofnormality(data)
+
+  if(is.null(norm)){
     cons <- 0
     typ <- 0
     mod <- 0
+    w[6:8] <- 0
+    #meter funcion de recalcular los otros pesos guardando proporcion
+    w[c(1:5,9:11)] <- 1/8
   }else{
-    cons<-Normality(data, 'Consistency')
-    typ<-Normality(data, 'Typicality')
-    mod<-Normality(data, 'Moderation')
+    cons <- Normality(data, outnormality = norm, metric = 'Consistency')
+    typ <- Normality(data, outnormality = norm, metric = 'Typicality')
+    mod <- Normality(data, outnormality = norm, metric = 'Moderation')
   }
 
   time<-Timeliness(data,columnDate, maxdif, units)
