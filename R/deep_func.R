@@ -241,22 +241,20 @@ deepRange <- function(data, ranges, var_time_name, position){
 
 # Normality ---------------------------------------------------------------
 
+#rectificar esto y adaptarlo a las nuevas funciones de normalidad
 deepNormality <- function(data, metric, var_time_name, position){
 
-  z <- ifelse(metric == 'Consistency', qnorm(0.9),
-              ifelse(metric == 'Typicality', qnorm(0.975),
-                     ifelse(metric == 'Moderation', qnorm(0.995), stop('Incorrect name of metric'))))
+  out <- outofnormality(data)
+  out_metric <- out[[metric]]
 
-
-  out <- isoutofnormality(data, metric)
 
   if(position){
 
-    df <- lapply(out, function(x) data[[var_time_name]][x])
+    df <- lapply(out_metric, function(x) data[[var_time_name]][x])
 
   }else{
 
-    df <- lapply(out, function(x) 1-(length(x)/nrow(data)))
+    df <- lapply(out_metric, function(x) 1-(length(x)/nrow(data)))
 
   }
 
