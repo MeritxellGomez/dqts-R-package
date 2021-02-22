@@ -123,7 +123,10 @@ outofnormality <- function(data){
   numericdata <- data %>% dplyr::select_if(is.numeric)
 
   if(nrow(numericdata) > 300){
-    sampledata <- numericdata[1:(nrow(numericdata)/3),] %>% dplyr::sample_n(., size = trunc(0.3*nrow(data)))
+    sampledata <- numericdata[1:(nrow(numericdata)/3),] %>%
+      as.data.frame() %>%
+      dplyr::sample_n(., size = trunc(0.3*nrow(data)))
+    colnames(sampledata) <- colnames(numericdata)
 
     if(nrow(sampledata) > 4999){
       sampledata1 <- as.data.frame(sampledata[1:4999,])
@@ -132,7 +135,8 @@ outofnormality <- function(data){
     }
 
   }else{
-    sampledata <- numericdata[1:(nrow(numericdata)/3),]
+    sampledata <- numericdata[1:(nrow(numericdata)/3),] %>% as.data.frame()
+    colnames(sampledata) <- colnames(numericdata)
   }
 
   pvalues <- apply(sampledata, 2, function(x) shapiro.test(x)$p.value)
@@ -164,16 +168,20 @@ Normality <- function(data, outnormality, metric){
 
   out_metric <- outnormality[[metric]]
 
+  p <- ifelse(metric == 'Consistency', 0.2, ifelse(metric == 'Typicality', 0.05, 0.01))
+
   normbyvars <- list()
   for(i in 1:length(out_metric)){
 
     aux <- length(out_metric[[i]]) / length(which(!is.na(data[[names(out_metric)[i]]])))
 
-    normbyvars[i] <- 1 - aux
+    aux_out <- aux - p
+
+    normbyvars[i] <- 1 - aux_out
 
   }
 
-  names(normbyvars) <- colnames(data)
+  names(normbyvars) <- names(out_metric)
 
   #ratio to different NA elements
   return(mean(unlist(normbyvars)))
