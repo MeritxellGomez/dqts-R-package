@@ -236,6 +236,30 @@ HLTimeliness <- function(data, columnDate, maxdif, units){
   return(data)
 }
 
+#similar to HLTimeliness
+
+# add_date_seq <- function(dataframe, date_var, from = NULL, to = NULL, by = as.difftime('00:01:00')){
+#
+#   if(is.null(from)){
+#
+#     from <- min(dataframe[[ date_var]])
+#   }
+#
+#   if(is.null(to)){
+#
+#     to <- max(dataframe[[ date_var]])
+#   }
+#
+#   aux_df <- data.frame(seq(from, to, by = by))
+#
+#   names(aux_df) <- date_var
+#
+#   dataframe <- merge(dataframe, aux_df, by = date_var, all = TRUE)
+#
+#   return(dataframe)
+# }
+
+
 #vec contains two dates. output is a df with dates between and NA in the rest of vars
 aux_timeliness <- function(vec, units, data, columnDate){
 
