@@ -244,6 +244,8 @@ deepRange <- function(data, ranges, var_time_name, position){
 #rectificar esto y adaptarlo a las nuevas funciones de normalidad
 deepNormality <- function(data, metric, var_time_name, position){
 
+  rownames(data) <- c(1:nrow(data))
+
   out <- outofnormality(data)
   out_metric <- out[[metric]]
 
@@ -254,7 +256,7 @@ deepNormality <- function(data, metric, var_time_name, position){
 
   }else{
 
-    df <- lapply(out_metric, function(x) 1-(length(x)/nrow(data)))
+    df <- Normality(data, out, metric, group = FALSE)
 
   }
 
