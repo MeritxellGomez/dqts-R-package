@@ -166,17 +166,26 @@ imputeRangesKNPTS <- function(data, ranges, ind, listout){
 
 HLNormality <- function(data, metric){
 
-  z <- ifelse(metric == 'Consistency', qnorm(0.9),
-              ifelse(metric == 'Typicality', qnorm(0.975),
-                     ifelse(metric == 'Moderation', qnorm(0.995), stop('Incorrect name of metric'))))
+  rownames(data) <- c(1:nrow(data))
 
+  out <- outofnormality(data)
 
-  listout <- isoutofnormality(data, metric)
+  out_metric <- out[[metric]]
 
-  ind <- c(1:length(listout))[sapply(listout, function(x) !is.null(x))]
+  perc_by_vars <- Normality(data, out, metric, group = FALSE) %>% lapply(., function(x) 1-x)
 
-  a <- 4
+  for(i in 1:length(names(out_metric))){
+
+    pos_imputation <- sample(out_metric[[i]], size = nrow(data)*perc_by_vars[[names(out_metric)[i]]])
+
+    data[[names(out_metric)[i]]][pos_imputation] <- mean(data[[names(out_metric)[i]]])
+
+  }
+
+  return(data)
+
 }
+
 
 
 
