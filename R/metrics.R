@@ -164,7 +164,7 @@ outofnormality <- function(data){
 }
 
 
-Normality <- function(data, outnormality, metric){
+Normality <- function(data, outnormality, metric, group = TRUE){
 
   out_metric <- outnormality[[metric]]
 
@@ -183,8 +183,13 @@ Normality <- function(data, outnormality, metric){
 
   names(normbyvars) <- names(out_metric)
 
-  #ratio to different NA elements
-  return(mean(unlist(normbyvars)))
+  if(group){
+    normality <- (mean(unlist(normbyvars)))
+  }else{
+    normality <- normbyvars
+  }
+
+  return(normality)
 
 }
 
