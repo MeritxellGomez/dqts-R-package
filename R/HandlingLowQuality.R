@@ -27,7 +27,7 @@ handleDQ <- function(data, metric, columnDate = NULL, var_time_name=NULL, ranges
   else if(metric == "TimeUniqueness"){HLTimeUniqueness(data, var_time_name, method)}
   else if(metric == 'Range'){HLRange(data, ranges, method)}
   else if(metric == 'Consistency' | metric == 'Typicality' | metric == 'Moderation'){HLNormality(data, metric)}
-  else if(metric == "Timeliness"){HLTimeliness(data, var_time_name, maxdif, units)}
+  else if(metric == "Timeliness"){HLTimeliness(data, var_time_name, maxdif, units, method)}
   #else if(metric == "Conformity"){HLConformity(data)}
   else(stop('Incorrect metric name'))
 
@@ -94,12 +94,15 @@ HLTimeUniqueness <- function(data, var_time_name, method){
 
 # Handling Low Range ------------------------------------------------------
 
-HLRange <- function(data, ranges, method = 'mean'){
+HLRange <- function(data, ranges, method){
 
   #añadir que se pueda escoger method = mean (la media de los limits),
   #limits (si sale por arriba poner el max y si sale por abajo poner el min), imputemethods
 
-  if(is.null(ranges)){ranges <- generateRangeData(data)}
+  if(is.null(ranges)){
+    warning('Range data frame should be given. The maximum and minimum values from a sample of original data have been taken as range data')
+    ranges <- generateRangeData(data)
+  }
 
   listout <- isoutofrange(data, ranges) #devuelve lista de variables y cada elemento contiene vector de indices out of range
 
@@ -107,6 +110,8 @@ HLRange <- function(data, ranges, method = 'mean'){
 
   if(method == 'mean'){
     data <- imputeRangesMean(data, ranges, ind, listout)
+  }else if(method == 'meanranges'){
+    data <- imputeRangesMeanRanges(data, ranges, ind, listout)
   }else if(method == 'maxmin'){
     data <- imputeRangesMaxMin(data, ranges, ind, listout)
   }else if(method == 'KNPTS'){
@@ -122,12 +127,24 @@ HLRange <- function(data, ranges, method = 'mean'){
 }
 
 
-imputeRangesMean <- function(data, ranges, ind, listout){
+imputeRangesMeanRanges <- function(data, ranges, ind, listout){
 
   for (i in ind){
     data[[names(listout)[i]]][listout[[i]]] <- mean(ranges[[names(listout)[i]]])
   }
   return(data)
+}
+
+
+imputeRangesMean <- function(data, ranges, ind, listout){
+
+  for (i in ind){
+    data[[names(listout)[i]]][listout[[i]]] <- mean(data[[names(listout)[i]]][-listout[[i]]], na.rm = TRUE)
+
+  }
+
+  return(data)
+
 }
 
 imputeRangesMaxMin <- function(data, ranges, ind, listout){
@@ -191,22 +208,11 @@ HLNormality <- function(data, metric){
 
 # Handling Low Timeliness -------------------------------------------------
 
-HLTimeliness <- function(data, var_time_name, maxdif, units){
+HLTimeliness <- function(data, var_time_name, maxdif, units, method){
 
-  first_date <- data[[var_time_name]][1]
-  last_date <- data[[var_time_name]][nrow(data)]
-
-  # if(units == "mins"){
-  #     step <- 60*maxdif
-  # }else if(units == "days"){
-  #   step <- 3600*maxdif
-  # }else if(units == "secs"){
-  #   step <- maxdif
-  # }else{
-  #   stop('units should be one of mins, days, secs')
-  # }
-
-  dif<-as.numeric(diff(data[[var_time_name]]))
+  date_vec <- data[[var_time_name]]
+  n <- length(date_vec)
+  dif <- difftime(date_vec[2:n], date_vec[1:(n-1)], units = units)
 
   outdif<-which(dif>maxdif)
   outdif_post <- outdif + 1
@@ -219,78 +225,47 @@ HLTimeliness <- function(data, var_time_name, maxdif, units){
 
   }
 
-  df_list <- lapply(l, function(x)aux_timeliness(x, units = units, data = data, var_time_name = var_time_name))
+  df_list <- lapply(l, function(x)aux_timeliness(x, units = units, var_time_name = var_time_name))
+  missing_df <- do.call(rbind, df_list)
 
-  for (j in 1:length(df_list)){
+  if(method == 'none'){
+    data <- merge(data, missing_df, by = var_time_name, all = TRUE)
+    rownames(data) <- c(1:nrow(data))
+  }else if(method == 'mean'){
+    data_to_add_1 <- data %>% select(-var_time_name) %>% summarise_all(function(x) mean(x, na.rm = TRUE))
+    data_to_add_n <- do.call('rbind', replicate(nrow(missing_df), data_to_add_1, simplify = FALSE))
 
-    data <- rbind(data, df_list[[j]])
+    missing_df_mean <- cbind(missing_df, data_to_add_n)
 
+    data <- rbind(data, missing_df_mean[-c(1,nrow(missing_df)),]) %>% arrange(timestamp)
+    rownames(data) <- c(1:nrow(data))
+
+  }else if(method == 'median'){
+    data_to_add_1 <- data %>% select(-var_time_name) %>% summarise_all(function(x) median(x, na.rm = TRUE))
+    data_to_add_n <- do.call('rbind', replicate(nrow(missing_df), data_to_add_1, simplify = FALSE))
+
+    missing_df_mean <- cbind(missing_df, data_to_add_n)
+
+    data <- rbind(data, missing_df_mean[-c(1,nrow(missing_df)),]) %>% arrange(timestamp)
+    rownames(data) <- c(1:nrow(data))
+  }else{
+    data <- 'Method not correct'
   }
 
-  data <- data[order(data[[var_time_name]]),]
 
-  rownames(data) <- c(1:nrow(data))
 
   return(data)
 }
 
-#similar to HLTimeliness
-
-# add_date_seq <- function(dataframe, date_var, from = NULL, to = NULL, by = as.difftime('00:01:00')){
-#
-#   if(is.null(from)){
-#
-#     from <- min(dataframe[[ date_var]])
-#   }
-#
-#   if(is.null(to)){
-#
-#     to <- max(dataframe[[ date_var]])
-#   }
-#
-#   aux_df <- data.frame(seq(from, to, by = by))
-#
-#   names(aux_df) <- date_var
-#
-#   dataframe <- merge(dataframe, aux_df, by = date_var, all = TRUE)
-#
-#   return(dataframe)
-# }
-
 
 #vec contains two dates. output is a df with dates between and NA in the rest of vars
-aux_timeliness <- function(vec, units, data, var_time_name){
+aux_timeliness <- function(vec, units, var_time_name){
 
-  columnDate <- which(colnames(data) == var_time_name)
+  missingtimes <- data.frame(seq(from = vec[1], to = vec[2], by = units))
 
-  n <- ncol(data) - 1
+  colnames(missingtimes) <- var_time_name
 
-  missingtime <- seq(from = vec[1], to = vec[2], by = units)
-  missingtime <- missingtime[-c(1,length(missingtime))]
-
-  m <- length(missingtime)
-
-  l<-list()
-
-  for (i in 1:ncol(data)){
-
-    if(i != columnDate){
-
-      l[[i]] <- rep(NA, m)
-
-    }else{
-
-      l[[i]] <- missingtime
-
-    }
-
-  }
-
-  aux <- data.frame(l)
-
-  colnames(aux) <- colnames(data)
-
-  return(aux)
+  return(missingtimes)
 
 }
 

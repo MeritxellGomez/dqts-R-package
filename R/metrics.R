@@ -137,6 +137,13 @@ outofnormality <- function(data){
     colnames(sampledata) <- colnames(numericdata)
   }
 
+  #remove columns where ALL values are NA
+  sampledata <- sampledata[,colSums(is.na(sampledata))<nrow(sampledata)]
+
+  #remove columns with ALL values identical
+  sampledata <- sampledata[vapply(sampledata, function(x) length(unique(na.omit(x))) > 1, logical(1L))]
+
+  #pvalues by variables
   pvalues <- apply(sampledata, 2, function(x) shapiro.test(x)$p.value)
 
   if(length(which(pvalues > 0.05)) == 0){
@@ -305,8 +312,14 @@ quality<-function(data, var_time_name, maxdif, units, dataref, ranges, weights){
   w<-weights
 
   comp<-Completeness(data)
-  compobv<-CompletenessObservations(data)
-  compvar<-CompletenessVariables(data)
+
+  if(comp == 1){
+    compobv <- 1
+    compvar <- 1
+  }else{
+    compobv<-CompletenessObservations(data)
+    compvar<-CompletenessVariables(data)
+  }
 
   tuni<-TimeUniqueness(data,var_time_name)
 
