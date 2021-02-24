@@ -43,11 +43,9 @@ CompletenessVariables<- function(data){
 #
 # }
 
-TimeUniqueness <- function(data, columnDate){
+TimeUniqueness <- function(data, var_time_name){
 
-  if(is.numeric(columnDate)==FALSE) stop('columnDate may be numeric')
-
-  length(unique(data[,columnDate])) / length(data[,columnDate])
+  length(unique(data[[var_time_name]])) / length(data[[var_time_name]])
 
 }
 
@@ -196,9 +194,9 @@ Normality <- function(data, outnormality, metric, group = TRUE){
 
 # Timeliness --------------------------------------------------------------
 
-generateMaxDif <- function(data, columnDate){
+generateMaxDif <- function(data, var_time_name){
 
-  timevar <- data[,columnDate]
+  timevar <- data[[var_time_name]]
   timevarsample <- sample(timevar, size = trunc(0.3*length(timevar)))
 
   diffs <- diff(timevarsample)
@@ -209,7 +207,7 @@ generateMaxDif <- function(data, columnDate){
 
 }
 
-Timeliness<-function(data, columnDate, maxdif, units){
+Timeliness<-function(data, var_time_name, maxdif, units){
   #se contempla 'secs', 'mins', 'hours', 'days', 'months'
 
   if(units == 'months'){
@@ -219,9 +217,9 @@ Timeliness<-function(data, columnDate, maxdif, units){
     units2 <- units
   }
 
-  dif <- diff(data[,columnDate])
-
-  dif <- as.numeric(dif)
+  date_vec <- data[[var_time_name]]
+  n <- length(date_vec)
+  dif <- difftime(date_vec[2:n], date_vec[1:(n-1)], units = units)
 
   outdif <- length(which(dif > maxdif))
 
@@ -229,8 +227,8 @@ Timeliness<-function(data, columnDate, maxdif, units){
     timeliness <- 1
   }else{
     pos <- which(dif > maxdif)
-    loss.start <- data[pos,columnDate]
-    loss.finish <- data[pos+1,columnDate]
+    loss.start <- data[[var_time_name]][pos]
+    loss.finish <- data[[var_time_name]][pos+1]
 
     waiting.time <- difftime(loss.finish, loss.start, units = units2)
 
@@ -243,9 +241,9 @@ Timeliness<-function(data, columnDate, maxdif, units){
       missing.amount <- trunc(((as.numeric(abs(waiting.time)))/maxdif)-1)
     }
 
-    totaltimes <- sum(missing.amount) + length(data[,columnDate])
+    totaltimes <- sum(missing.amount) + length(data[[var_time_name]])
 
-    timeliness <- length(data[,columnDate]) / totaltimes
+    timeliness <- length(data[[var_time_name]]) / totaltimes
   }
 
   return(timeliness)
@@ -302,7 +300,7 @@ Names <- function(data, dataref){
 
 # Quality -----------------------------------------------------------------
 
-quality<-function(data, columnDate, maxdif, units, dataref, ranges, weights){
+quality<-function(data, var_time_name, maxdif, units, dataref, ranges, weights){
 
   w<-weights
 
@@ -310,7 +308,7 @@ quality<-function(data, columnDate, maxdif, units, dataref, ranges, weights){
   compobv<-CompletenessObservations(data)
   compvar<-CompletenessVariables(data)
 
-  tuni<-TimeUniqueness(data,columnDate)
+  tuni<-TimeUniqueness(data,var_time_name)
 
   range<-Range(data, ranges)
 
@@ -329,7 +327,7 @@ quality<-function(data, columnDate, maxdif, units, dataref, ranges, weights){
     mod <- Normality(data, outnormality = norm, metric = 'Moderation')
   }
 
-  time<-Timeliness(data,columnDate, maxdif, units)
+  time<-Timeliness(data,var_time_name, maxdif, units)
 
   form<-Formats(data, dataref)
   nam<-Names(data,dataref)
@@ -338,11 +336,12 @@ quality<-function(data, columnDate, maxdif, units, dataref, ranges, weights){
               w[4]*tuni + w[5]*range + w[6]*cons +
               w[7]*typ + w[8]*mod + w[9]*time + w[10]*form + w[11]*nam)
 
-  return(data.frame(InitialDate = data[1,columnDate], FinalDate = data[nrow(data), columnDate], Completeness = comp, CompletenessObservations = compobv,
-              CompletenessVariables = compvar, TimeUniqueness = tuni,
-              Range = range, Consistency = cons, Typicality = typ,
-              Moderation = mod, Timeliness = time, Formats = form,
-              Names = nam, DataQuality = quality))
+  return(data.frame(InitialDate = data[[var_time_name]][1], FinalDate = data[[var_time_name]][nrow(data)],
+                    Completeness = comp, CompletenessObservations = compobv,
+                    CompletenessVariables = compvar, TimeUniqueness = tuni,
+                    Range = range, Consistency = cons, Typicality = typ,
+                    Moderation = mod, Timeliness = time, Formats = form,
+                    Names = nam, DataQuality = quality))
 
 }
 

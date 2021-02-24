@@ -27,7 +27,7 @@ handleDQ <- function(data, metric, columnDate = NULL, var_time_name=NULL, ranges
   else if(metric == "TimeUniqueness"){HLTimeUniqueness(data, var_time_name, method)}
   else if(metric == 'Range'){HLRange(data, ranges, method)}
   else if(metric == 'Consistency' | metric == 'Typicality' | metric == 'Moderation'){HLNormality(data, metric)}
-  else if(metric == "Timeliness"){HLTimeliness(data, columnDate, maxdif, units)}
+  else if(metric == "Timeliness"){HLTimeliness(data, var_time_name, maxdif, units)}
   #else if(metric == "Conformity"){HLConformity(data)}
   else(stop('Incorrect metric name'))
 
@@ -191,9 +191,7 @@ HLNormality <- function(data, metric){
 
 # Handling Low Timeliness -------------------------------------------------
 
-HLTimeliness <- function(data, columnDate, maxdif, units){
-
-  var_time_name <- colnames(data)[columnDate]
+HLTimeliness <- function(data, var_time_name, maxdif, units){
 
   first_date <- data[[var_time_name]][1]
   last_date <- data[[var_time_name]][nrow(data)]
@@ -208,7 +206,7 @@ HLTimeliness <- function(data, columnDate, maxdif, units){
   #   stop('units should be one of mins, days, secs')
   # }
 
-  dif<-as.numeric(diff(data[,columnDate]))
+  dif<-as.numeric(diff(data[[var_time_name]]))
 
   outdif<-which(dif>maxdif)
   outdif_post <- outdif + 1
@@ -221,7 +219,7 @@ HLTimeliness <- function(data, columnDate, maxdif, units){
 
   }
 
-  df_list <- lapply(l, function(x)aux_timeliness(x, units = units, data = data, columnDate=columnDate))
+  df_list <- lapply(l, function(x)aux_timeliness(x, units = units, data = data, var_time_name = var_time_name))
 
   for (j in 1:length(df_list)){
 
@@ -261,7 +259,9 @@ HLTimeliness <- function(data, columnDate, maxdif, units){
 
 
 #vec contains two dates. output is a df with dates between and NA in the rest of vars
-aux_timeliness <- function(vec, units, data, columnDate){
+aux_timeliness <- function(vec, units, data, var_time_name){
+
+  columnDate <- which(colnames(data) == var_time_name)
 
   n <- ncol(data) - 1
 

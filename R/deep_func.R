@@ -35,7 +35,7 @@ deepDQ <- function(data, metric, columnDate=NULL, var_time_name = NULL, position
   }
 
   if(metric == "Completeness"){deepdf <- deepCompleteness(data, var_time_name, position)}
-  if(metric == "Timeliness"){deepdf <- deepTimeliness(data, columnDate, var_time_name, maxdif, units)}
+  if(metric == "Timeliness"){deepdf <- deepTimeliness(data, var_time_name, maxdif, units)}
   if(metric == "TimeUniqueness"){deepdf <- deepTimeUniqueness(data, var_time_name)}
   if(metric == "Formats" | metric == "Names"){deepdf <- deepConformity(data, dataref,metric)}
   if(metric == "Range"){deepdf <- deepRange(data, ranges, var_time_name, position)}
@@ -51,7 +51,7 @@ deepDQ <- function(data, metric, columnDate=NULL, var_time_name = NULL, position
 #study of timeliness. data is the set of values. columndate is an integer to indicate the position of the date variable
 #maxdif is an integer to indicate the maximum difference allowed between two dates
 #missing is a boolean: TRUE if we want to see all results and FALSE if we always want to see the missing intervals
-deepTimeliness <- function(data, columnDate=NULL, var_time_name=NULL, maxdif, units){
+deepTimeliness <- function(data, var_time_name, maxdif, units){
 
   if(units == 'months'){
     maxdif <- 31
@@ -241,22 +241,22 @@ deepRange <- function(data, ranges, var_time_name, position){
 
 # Normality ---------------------------------------------------------------
 
-#rectificar esto y adaptarlo a las nuevas funciones de normalidad
 deepNormality <- function(data, metric, var_time_name, position){
 
-  rownames(data) <- c(1:nrow(data))
+  z <- ifelse(metric == 'Consistency', qnorm(0.9),
+              ifelse(metric == 'Typicality', qnorm(0.975),
+                     ifelse(metric == 'Moderation', qnorm(0.995), stop('Incorrect name of metric'))))
 
-  out <- outofnormality(data)
-  out_metric <- out[[metric]]
 
+  out <- isoutofnormality(data, metric)
 
   if(position){
 
-    df <- lapply(out_metric, function(x) data[[var_time_name]][x])
+    df <- lapply(out, function(x) data[[var_time_name]][x])
 
   }else{
 
-    df <- Normality(data, out, metric, group = FALSE)
+    df <- lapply(out, function(x) 1-(length(x)/nrow(data)))
 
   }
 
