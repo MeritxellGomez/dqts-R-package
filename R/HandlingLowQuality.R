@@ -193,9 +193,9 @@ HLNormality <- function(data, metric){
 
   for(i in 1:length(names(out_metric))){
 
-    pos_imputation <- sample(out_metric[[i]], size = nrow(data)*perc_by_vars[[names(out_metric)[i]]])
+    #pos_imputation <- sample(out_metric[[i]], size = nrow(data)*perc_by_vars[[names(out_metric)[i]]])
 
-    data[[names(out_metric)[i]]][pos_imputation] <- mean(data[[names(out_metric)[i]]])
+    data[[names(out_metric)[i]]][out_metric[[i]]] <- mean(data[[names(out_metric)[i]]])
 
   }
 
