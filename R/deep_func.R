@@ -71,7 +71,9 @@ deepTimeliness <- function(data, var_time_name, maxdif, units){
 
   df.timeliness <- data.frame(loss.start, loss.finish, waiting.time, missing.amount)
 
-  return(df.timeliness)
+  df.timeliness.filt <- subset(df.timeliness, missing.amount != 0)
+
+  return(df.timeliness.filt)
 
 }
 
