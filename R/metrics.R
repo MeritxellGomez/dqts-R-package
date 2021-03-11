@@ -120,7 +120,7 @@ outofnormality <- function(data){
   set.seed(111)
   numericdata <- data %>% dplyr::select_if(is.numeric)
 
-  if(nrow(numericdata)<3){
+  if(nrow(numericdata)<18){
     out_normality <- NULL
     return(out_normality)
   }
