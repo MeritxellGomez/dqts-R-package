@@ -112,6 +112,8 @@ HLRange <- function(data, ranges, method){
     data <- imputeRangesMean(data, ranges, ind, listout)
   }else if(method == 'meanranges'){
     data <- imputeRangesMeanRanges(data, ranges, ind, listout)
+  }else if(method == 'median'){
+    data <- imputeRangesMedian(data, ranges, ind, listout)
   }else if(method == 'maxmin'){
     data <- imputeRangesMaxMin(data, ranges, ind, listout)
   }else if(method == 'KNPTS'){
@@ -140,6 +142,17 @@ imputeRangesMean <- function(data, ranges, ind, listout){
 
   for (i in ind){
     data[[names(listout)[i]]][listout[[i]]] <- mean(data[[names(listout)[i]]][-listout[[i]]], na.rm = TRUE)
+
+  }
+
+  return(data)
+
+}
+
+imputeRangesMedian <- function(data, ranges, ind, listout){
+
+  for (i in ind){
+    data[[names(listout)[i]]][listout[[i]]] <- median(data[[names(listout)[i]]][-listout[[i]]], na.rm = TRUE)
 
   }
 
