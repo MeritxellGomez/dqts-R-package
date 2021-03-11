@@ -143,7 +143,7 @@ outofnormality <- function(data){
   }
 
   #remove columns where ALL values are NA
-  #sampledata <- sampledata[,colSums(is.na(sampledata))<nrow(sampledata)]
+  sampledata <- sampledata[,colSums(is.na(sampledata))<nrow(sampledata)]
 
   #remove columns with ALL values identical
   sampledata <- sampledata[vapply(sampledata, function(x) length(unique(na.omit(x))) > 1, logical(1L))]
