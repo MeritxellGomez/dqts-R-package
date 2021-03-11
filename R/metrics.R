@@ -120,6 +120,11 @@ outofnormality <- function(data){
   set.seed(111)
   numericdata <- data %>% dplyr::select_if(is.numeric)
 
+  if(nrow(numericdata)<3){
+    out_normality <- NULL
+    return(out_normality)
+  }
+
   if(nrow(numericdata) > 300){
     sampledata <- numericdata[1:(nrow(numericdata)/3),] %>%
       as.data.frame() %>%
@@ -148,6 +153,7 @@ outofnormality <- function(data){
 
   if(length(which(pvalues > 0.05)) == 0){
     out_normality <- NULL
+    return(out_normality)
   }else{
 
     namevars <- names(which(pvalues>0.05))
@@ -161,10 +167,10 @@ outofnormality <- function(data){
     out_moderation <- isoutofnormality(data[namevars], metric = 'Moderation', mean = mean_normalvars, sd = sd_normalvars)
 
     out_normality <- list(Consistency = out_consistency, Typicality = out_typicality, Moderation = out_moderation)
-
+    return(out_normality)
   }
 
-  return(out_normality)
+
 
 }
 
