@@ -246,13 +246,16 @@ deepNormality <- function(data, metric, var_time_name, position){
   if(position){
 
     df <- lapply(out_metric, function(x) data[[var_time_name]][x])
+    dfn <- plyr::ldply(df, rbind)
+    for(i in 2:ncol(dfn)){dfn[,i] <- lubridate::as_datetime(dfn[,i])}
 
   }else{
 
     df <- lapply(out_metric, function(x) 1-(length(x)/nrow(data)))
-
+    dfn <- plyr::ldply(df, rbind)
+    colnames(dfn) <- c('Gaussian Variables', 'Metric Value')
   }
 
-  return(df)
+  return(dfn)
 
 }
