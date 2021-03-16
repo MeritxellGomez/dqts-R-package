@@ -12,12 +12,12 @@ deepDQ(
   position = FALSE,
   dataref = NULL,
   ranges = NULL,
-  maxdif,
+  maxdif = NULL,
   units = "secs"
 )
 }
 \arguments{
-\item{data}{The data frame to be analyzed}
+\item{data}{The data frame or time series to be analyzed}
 
 \item{metric}{The name of the metric to be analyzed}
 

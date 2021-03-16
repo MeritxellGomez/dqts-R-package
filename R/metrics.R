@@ -43,11 +43,9 @@ CompletenessVariables<- function(data){
 #
 # }
 
-TimeUniqueness <- function(data, columnDate){
+TimeUniqueness <- function(data, var_time_name){
 
-  if(is.numeric(columnDate)==FALSE) stop('columnDate may be numeric')
-
-  length(unique(data[,columnDate])) / length(data[,columnDate])
+  length(unique(data[[var_time_name]])) / length(data[[var_time_name]])
 
 }
 
@@ -56,7 +54,7 @@ TimeUniqueness <- function(data, columnDate){
 
 generateRangeData <- function(data){
 
-  mysample <- data[sample(nrow(data), round(0.4*nrow(data))),]
+  mysample <- data[sample(nrow(data), round(0.3*nrow(data))),]
 
   mysample[, sapply(mysample, is.factor)] <- sapply(mysample[,sapply(mysample, is.factor)], as.character)
 
@@ -70,7 +68,6 @@ generateRangeData <- function(data){
 }
 
 isoutofrange <- function(data, ranges){
-
   check<-list()
   for (i in 1:ncol(data)){
     if(is.numeric(data[,i])){
@@ -86,7 +83,7 @@ Range<-function(data, ranges){
 
   out <- isoutofrange(data, ranges)
   totalout <- length(unlist(out))
-  n<- sum(apply(as.matrix(data[,sapply(data, is.numeric)]), 2, function(x) length(which(!is.na(x)))))
+  n<- length(which(!is.na(data)))
 
   #ratio to different NA elements
   return(1 - (totalout / n))
@@ -94,90 +91,136 @@ Range<-function(data, ranges){
 
 
 
-# Consistency -------------------------------------------------------------
+# Normality  --------------------------------------------------------------
 
-consistent<-function(variable){
+isoutofnormality<-function(data, metric, mean, sd){
 
-  n<-length(variable)
-  variable <- variable[1:trunc(n/3)]
+  z <- ifelse(metric == 'Consistency', qnorm(0.9),
+              ifelse(metric == 'Typicality', qnorm(0.975),
+                     ifelse(metric == 'Moderation', qnorm(0.995), stop('Incorrect name of metric'))))
 
-  mtemp<-mean(na.omit(variable))
-  sdtemp<-sd(na.omit(variable))
+  check <- list()
 
-  m<-mtemp-1.28*sdtemp
-  M<-mtemp+1.28*sdtemp
+  for (i in 1:ncol(data)){
 
-  lower<-which(variable<m)
-  upper<-which(variable>M)
+    lower <- mean[i] - z*sd[i]
+    upper <- mean[i] + z*sd[i]
 
-  incons<-length(lower)+length(upper)
-  return(1-(incons/length(variable)))
-}
+    aux<-which(data[,i] < lower | data[,i] > upper)
+    check[[colnames(data)[i]]] <- aux
+  }
 
-Consistency<-function(data){
-  co<-apply(as.matrix(data[,sapply(data, is.numeric)]), 2, consistent)
-  return(sum(as.numeric(co))/length(co))
-}
+  return(check)
 
-
-
-# Typicality --------------------------------------------------------------
-
-typical<-function(variable){
-
-  n<-length(variable)
-  variable <- variable[1:trunc(n/3)]
-
-  mtemp<-mean(na.omit(variable))
-  sdtemp<-sd(na.omit(variable))
-
-  m<-mtemp-1.96*sdtemp
-  M<-mtemp+1.96*sdtemp
-
-  lower<-which(variable<m)
-  upper<-which(variable>M)
-
-  atip<-length(lower)+length(upper)
-
-  return(1-(atip/length(variable)))
-}
-
-Typicality<-function(data){ #aplica función atípicos a todas las variables (columnas) de data
-  at<-apply(as.matrix(data[,sapply(data, is.numeric)]), 2, typical)
-  return(sum(as.numeric(at))/length(at)) #hace la media de todos los atipicos de cada variable
 }
 
 
-# Moderation --------------------------------------------------------------
+outofnormality <- function(data){
 
-moderate<-function(variable){
+  set.seed(111)
+  numericdata <- data %>% dplyr::select_if(is.numeric)
 
-  n<-length(variable)
-  variable <- variable[1:trunc(n/3)]
+  if(nrow(numericdata)<18){
+    out_normality <- NULL
+    return(out_normality)
+  }
 
-  mtemp<-mean(na.omit(variable))
-  sdtemp<-sd(na.omit(variable))
+  if(nrow(numericdata) > 300){
+    sampledata <- numericdata[1:(nrow(numericdata)/3),] %>%
+      as.data.frame() %>%
+      dplyr::sample_n(., size = trunc(0.3*nrow(data)))
+    colnames(sampledata) <- colnames(numericdata)
 
-  m<-mtemp-2.59*sdtemp
-  M<-mtemp+2.59*sdtemp
+    if(nrow(sampledata) > 4999){
+      sampledata1 <- as.data.frame(sampledata[1:4999,])
+      colnames(sampledata1) <- colnames(sampledata)
+      sampledata <- sampledata1
+    }
 
-  lower<-which(variable<m)
-  upper<-which(variable>M)
+  }else{
+    sampledata <- numericdata[1:(nrow(numericdata)/3),] %>% as.data.frame()
+    colnames(sampledata) <- colnames(numericdata)
+  }
 
-  extr<-length(lower)+length(upper)
+  #remove columns where ALL values are NA
+  #sampledata <- sampledata[,colSums(is.na(sampledata))<nrow(sampledata)]
 
-  return(1-(extr/length(variable)))
+  #remove columns with ALL values identical
+  sampledata <- sampledata[vapply(sampledata, function(x) length(unique(na.omit(x))) > 1, logical(1L))]
+
+  #pvalues by variables
+  pvalues <- apply(sampledata, 2, function(x) shapiro.test(x)$p.value)
+
+  if(length(which(pvalues > 0.05)) == 0){
+    out_normality <- NULL
+    return(out_normality)
+  }else{
+
+    namevars <- names(which(pvalues>0.05))
+
+    mean_normalvars <- apply(sampledata[namevars], 2, function(x) mean(x, na.rm = TRUE))
+    sd_normalvars <- apply(sampledata[namevars], 2, function(x) sd(x, na.rm = TRUE))
+
+
+    out_consistency <- isoutofnormality(data[namevars], metric = 'Consistency', mean = mean_normalvars, sd = sd_normalvars)
+    out_typicality <- isoutofnormality(data[namevars], metric = 'Typicality', mean = mean_normalvars, sd = sd_normalvars)
+    out_moderation <- isoutofnormality(data[namevars], metric = 'Moderation', mean = mean_normalvars, sd = sd_normalvars)
+
+    out_normality <- list(Consistency = out_consistency, Typicality = out_typicality, Moderation = out_moderation)
+    return(out_normality)
+  }
+
+
+
 }
 
-Moderation<-function(data){ #aplica función extremos a todas las variables (columnas) de data
-  moder<-apply(as.matrix(data[,sapply(data, is.numeric)]), 2, moderate)
-  return(sum(as.numeric(moder))/length(moder)) #hace la media de todos los extemos de cada variable
+
+Normality <- function(data, outnormality, metric, group = TRUE){
+
+  out_metric <- outnormality[[metric]]
+
+  p <- ifelse(metric == 'Consistency', 0.2, ifelse(metric == 'Typicality', 0.05, 0.01))
+
+  normbyvars <- list()
+  for(i in 1:length(out_metric)){
+
+    aux <- length(out_metric[[i]]) / length(which(!is.na(data[[names(out_metric)[i]]])))
+
+    aux_out <- aux - p
+
+    normbyvars[i] <- 1 - aux_out
+
+  }
+
+  names(normbyvars) <- names(out_metric)
+
+  if(group){
+    normality <- (mean(unlist(normbyvars)))
+  }else{
+    normality <- normbyvars
+  }
+
+  return(normality)
+
 }
 
 
 # Timeliness --------------------------------------------------------------
 
-Timeliness<-function(data, columnDate, maxdif, units){
+generateMaxDif <- function(data, var_time_name){
+
+  timevar <- data[[var_time_name]]
+  timevarsample <- sample(timevar, size = trunc(0.3*length(timevar)))
+
+  diffs <- diff(timevarsample)
+  uniq <- unique(diffs)
+  maxdif <- uniq[which.max(tabulate(match(diffs, uniq)))]
+
+  return(maxdif)
+
+}
+
+Timeliness<-function(data, var_time_name, maxdif, units){
   #se contempla 'secs', 'mins', 'hours', 'days', 'months'
 
   if(units == 'months'){
@@ -187,28 +230,33 @@ Timeliness<-function(data, columnDate, maxdif, units){
     units2 <- units
   }
 
-  dif<-diff(data[,columnDate])
+  date_vec <- data[[var_time_name]]
+  n <- length(date_vec)
+  dif <- difftime(date_vec[2:n], date_vec[1:(n-1)], units = units)
 
-  outdif<-length(which(dif>maxdif))
+  outdif <- length(which(dif > maxdif))
 
   if(outdif == 0){
     timeliness <- 1
   }else{
-    pos <- which(dif>maxdif)
-    loss.start <- data[pos,columnDate]
-    loss.finish <- data[pos+1,columnDate]
+    pos <- which(dif > maxdif)
+    loss.start <- data[[var_time_name]][pos]
+    loss.finish <- data[[var_time_name]][pos+1]
 
     waiting.time <- difftime(loss.finish, loss.start, units = units2)
 
     if(units == 'months'){
       missing.amount <- round(((as.numeric(abs(waiting.time)))/maxdif)-1)
-    }else{
+    }else if(units == 'days'){
+      missing.amount <- trunc(((as.numeric(abs(waiting.time)))/maxdif))
+    }
+    else{
       missing.amount <- trunc(((as.numeric(abs(waiting.time)))/maxdif)-1)
     }
 
-    totaltimes <- sum(missing.amount) + length(data[,columnDate])
+    totaltimes <- sum(missing.amount) + length(data[[var_time_name]])
 
-    timeliness <- length(data[,columnDate]) / totaltimes
+    timeliness <- length(data[[var_time_name]]) / totaltimes
   }
 
   return(timeliness)
@@ -219,7 +267,7 @@ Timeliness<-function(data, columnDate, maxdif, units){
 # Conformity --------------------------------------------------------------
 generateReferenceData <- function(data){
 
-  mysample <- data[sample(nrow(data), round(0.4*nrow(data))),]
+  mysample <- data[sample(nrow(data), round(0.3*nrow(data))),]
 
   types <- lapply(mysample, class)
   types <- lapply(types, function(x) if(length(x) != 1){x <- paste(x, collapse = " ")}else{x <- x})
@@ -265,27 +313,40 @@ Names <- function(data, dataref){
 
 # Quality -----------------------------------------------------------------
 
-quality<-function(data, columnDate, maxdif, units, dataref, ranges=NULL, weights=NULL){
-
-  if(is.null(weights)){
-    weights<-c(rep((1/11),11))
-  }
+quality<-function(data, var_time_name, maxdif, units, dataref, ranges, weights){
 
   w<-weights
 
   comp<-Completeness(data)
-  compobv<-CompletenessObservations(data)
-  compvar<-CompletenessVariables(data)
 
-  tuni<-TimeUniqueness(data,columnDate)
+  if(comp == 1){
+    compobv <- 1
+    compvar <- 1
+  }else{
+    compobv<-CompletenessObservations(data)
+    compvar<-CompletenessVariables(data)
+  }
+
+  tuni<-TimeUniqueness(data,var_time_name)
 
   range<-Range(data, ranges)
 
-  cons<-Consistency(data)
-  typ<-Typicality(data)
-  mod<-Moderation(data)
+  norm <- outofnormality(data)
 
-  time<-Timeliness(data,columnDate, maxdif, units)
+  if(is.null(norm)){
+    cons <- 0
+    typ <- 0
+    mod <- 0
+    w[6:8] <- 0
+    #meter funcion de recalcular los otros pesos guardando proporcion
+    w[c(1:5,9:11)] <- 1/8
+  }else{
+    cons <- Normality(data, outnormality = norm, metric = 'Consistency')
+    typ <- Normality(data, outnormality = norm, metric = 'Typicality')
+    mod <- Normality(data, outnormality = norm, metric = 'Moderation')
+  }
+
+  time<-Timeliness(data,var_time_name, maxdif, units)
 
   form<-Formats(data, dataref)
   nam<-Names(data,dataref)
@@ -294,11 +355,12 @@ quality<-function(data, columnDate, maxdif, units, dataref, ranges=NULL, weights
               w[4]*tuni + w[5]*range + w[6]*cons +
               w[7]*typ + w[8]*mod + w[9]*time + w[10]*form + w[11]*nam)
 
-  return(data.frame(InitialDate = data[1,columnDate], FinalDate = data[nrow(data), columnDate], Completeness = comp, CompletenessObservations = compobv,
-              CompletenessVariables = compvar, TimeUniqueness = tuni,
-              Range = range, Consistency = cons, Typicality = typ,
-              Moderation = mod, Timeliness = time, Formats = form,
-              Names = nam, DataQuality = quality))
+  return(data.frame(InitialDate = data[[var_time_name]][1], FinalDate = data[[var_time_name]][nrow(data)],
+                    Completeness = comp, CompletenessObservations = compobv,
+                    CompletenessVariables = compvar, TimeUniqueness = tuni,
+                    Range = range, Consistency = cons, Typicality = typ,
+                    Moderation = mod, Timeliness = time, Formats = form,
+                    Names = nam, DataQuality = quality))
 
 }
 

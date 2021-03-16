@@ -47,16 +47,19 @@ DQ <- function(data, columnDate = NULL, var_time_name = NULL, maxdif = NULL, uni
   }
 
   if(is.null(maxdif)){ #if maxdif is null, then the most frequent value is assigned
-    diffs <- diff(data[,columnDate])
-    uniq <- unique(diffs)
-    maxdif <- uniq[which.max(tabulate(match(diffs, uniq)))]
+    warning('Maxdif should be given. An estimation of maxdif value is calculated from a sample of original data')
+    maxdif <- generateMaxDif(data, var_time_name)
+  }
+
+  if(is.null(weights)){
+    weights<-c(rep((1/11),11))
   }
 
   if(isFALSE(windows)){
-    myquality <- quality(data, columnDate, maxdif, units, dataref, ranges, weights)
+    myquality <- quality(data, var_time_name, maxdif, units, dataref, ranges, weights)
   }else{
     minidf <- data %>% nrow() %>% windowpartitions(., initialWindow, skip, fixedWindow) %>% segwdw(data,.)
-    myquality <- do.call(rbind,lapply(minidf, function(x) quality(x, columnDate, maxdif, units, dataref, ranges, weights)))
+    myquality <- do.call(rbind,lapply(minidf, function(x) quality(x, var_time_name, maxdif, units, dataref, ranges, weights)))
   }
 
   return(myquality)
