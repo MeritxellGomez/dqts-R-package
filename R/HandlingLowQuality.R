@@ -12,7 +12,7 @@
 #' @export
 #'
 #' @examples
-handleDQ <- function(data, metric, columnDate = NULL, var_time_name=NULL, ranges = NULL, method = "mean", maxdif = NULL, units = NULL){
+handleDQ <- function(data, metric, columnDate = NULL, var_time_name = NULL, ranges = NULL, dataref = NULL, method = "mean", maxdif = NULL, units = NULL){
 
   if(class(data) == 'ts'){
     data <- tsbox::ts_df(data)
@@ -28,7 +28,7 @@ handleDQ <- function(data, metric, columnDate = NULL, var_time_name=NULL, ranges
   else if(metric == 'Range'){HLRange(data, ranges, method)}
   else if(metric == 'Consistency' | metric == 'Typicality' | metric == 'Moderation'){HLNormality(data, metric)}
   else if(metric == "Timeliness"){HLTimeliness(data, var_time_name, maxdif, units, method)}
-  #else if(metric == "Conformity"){HLConformity(data)}
+  #else if(metric == "Formats" | metric == "Names"){HLConformity(data, metric, dataref)}
   else(stop('Incorrect metric name'))
 
 }
@@ -227,7 +227,7 @@ HLTimeliness <- function(data, var_time_name, maxdif, units, method){
   n <- length(date_vec)
   dif <- difftime(date_vec[2:n], date_vec[1:(n-1)], units = units)
 
-  outdif<-which(dif>maxdif)
+  outdif<-which(dif >= 2*maxdif)
   outdif_post <- outdif + 1
 
   l <- list()
@@ -239,9 +239,10 @@ HLTimeliness <- function(data, var_time_name, maxdif, units, method){
   }
 
   df_list <- lapply(l, function(x)aux_timeliness(x, units = units, var_time_name = var_time_name))
+  df_list <- lapply(df_list, function(x) aux_df_timeliness(x, var_time_name = var_time_name))
   missing_df <- do.call(rbind, df_list)
 
-  if(method == 'none'){
+  if(method == 'missing'){
     data <- merge(data, missing_df, by = var_time_name, all = TRUE)
     rownames(data) <- c(1:nrow(data))
   }else if(method == 'mean'){
@@ -250,7 +251,8 @@ HLTimeliness <- function(data, var_time_name, maxdif, units, method){
 
     missing_df_mean <- cbind(missing_df, data_to_add_n)
 
-    data <- rbind(data, missing_df_mean[-c(1,nrow(missing_df)),]) %>% arrange(timestamp)
+    data <- rbind(data, missing_df_mean)
+    data <- data[order(data[[var_time_name]]),]
     rownames(data) <- c(1:nrow(data))
 
   }else if(method == 'median'){
@@ -259,7 +261,8 @@ HLTimeliness <- function(data, var_time_name, maxdif, units, method){
 
     missing_df_mean <- cbind(missing_df, data_to_add_n)
 
-    data <- rbind(data, missing_df_mean[-c(1,nrow(missing_df)),]) %>% arrange(timestamp)
+    data <- rbind(data, missing_df_mean)
+    data <- data[order(data[[var_time_name]]),]
     rownames(data) <- c(1:nrow(data))
   }else{
     data <- 'Method not correct'
@@ -282,9 +285,20 @@ aux_timeliness <- function(vec, units, var_time_name){
 
 }
 
+aux_df_timeliness <- function(x, var_time_name){
+
+  n <- nrow(x)
+
+  df <- data.frame(x[-c(1,n),])
+
+  colnames(df) <- var_time_name
+
+  return(df)
+}
+
 # Handling Low Conformity -------------------------------------------------
 
-HLConformity <- function(data){
+HLConformity <- function(data, metric, dataref){
 
   #varias opciones segun el problema que se tenga...
 

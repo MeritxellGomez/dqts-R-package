@@ -10,6 +10,7 @@ handleDQ(
   columnDate = NULL,
   var_time_name = NULL,
   ranges = NULL,
+  dataref = NULL,
   method = "mean",
   maxdif = NULL,
   units = NULL
