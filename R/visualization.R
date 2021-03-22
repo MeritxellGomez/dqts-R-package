@@ -1,3 +1,27 @@
+#' Plot data quality metrics
+#'
+#' Takes a data quality data frame and plot the values of the metrics
+#'
+#' @param totalquality Logical argument. If TRUE the global data quality is added with the other metrics
+#' @param DQ A data frame with quality metrics as columns
+#'
+#' @return Plot of the quality metric values
+#' @export
+dqplot <- function(DQ, totalquality = FALSE, normal = TRUE){
+
+  if(nrow(DQ) == 1){
+
+    qualitybarplot(DQ, totalquality, normal)
+
+  }else{
+
+    movDQplot(DQ, totalquality, normal)
+
+  }
+
+}
+
+
 qualitybarplot <- function(DQ, totalquality, normal){
 
   library(dplyr)
@@ -42,26 +66,3 @@ movDQplot <- function(movingDQ, totalquality, normal){
     theme(axis.text.x = element_text(angle = 90))
 }
 
-
-#' Plot data quality metrics
-#'
-#' Takes a data quality data frame and plot the values of the metrics
-#'
-#' @param totalquality Logical argument. If TRUE the global data quality is added with the other metrics
-#' @param DQ A data frame with quality metrics as columns
-#'
-#' @return Plot of the quality metric values
-#' @export
-dqplot <- function(DQ, totalquality = FALSE, normal = TRUE){
-
-  if(nrow(DQ) == 1){
-
-    qualitybarplot(DQ, totalquality, normal)
-
-  }else{
-
-    movDQplot(DQ, totalquality, normal)
-
-  }
-
-}
