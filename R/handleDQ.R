@@ -27,7 +27,7 @@ handleDQ <- function(data, metric, columnDate = NULL, var_time_name = NULL, rang
   else if(metric == "TimeUniqueness"){HLTimeUniqueness(data, var_time_name, method)}
   else if(metric == 'Range'){HLRange(data, method, ranges)}
   else if(metric == 'Consistency' | metric == 'Typicality' | metric == 'Moderation'){HLNormality(data, metric)}
-  else if(metric == "Completeness"){HLCompleteness(data, method)}
+  else if(metric == "Completeness"){HLCompleteness(data, method, ranges)}
   else(stop('Incorrect metric name'))
 
 }
@@ -127,7 +127,7 @@ HLRange <- function(data, method, ranges){
 
   list_out <- lapply(out_positions, idlist)
 
-  data <- impute(data, list_out, method, ranges = ranges)
+  data <- impute(data = data, list_ids = list_out, method = method, ranges = ranges)
 
   return(data)
 
@@ -158,7 +158,7 @@ HLNormality <- function(data, metric){
 }
 
 # Handling Low Completeness -----------------------------------------------
-HLCompleteness <- function(data, method){
+HLCompleteness <- function(data, method, ranges = NULL){
 
   selcolna <- apply(data, 2, function(x) ifelse(sum(is.na(x))!=0, TRUE, FALSE))
 
@@ -166,7 +166,7 @@ HLCompleteness <- function(data, method){
 
   list_na <- lapply(na_positions, idlist)
 
-  data <- impute(data = data, list_ids = list_na, method = method, ranges = NULL)
+  data <- impute(data = data, list_ids = list_na, method = method, ranges = ranges)
 
   return(data)
 
