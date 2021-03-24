@@ -107,30 +107,11 @@ HLTimeliness <- function(data, var_time_name, maxdif, units, method){
   if(method == 'missing'){
     data <- merge(data, missing_df, by = var_time_name, all = TRUE)
     rownames(data) <- c(1:nrow(data))
-  }else if(method == 'mean'){
-    data_to_add_1 <- data %>% select(-var_time_name) %>% summarise_all(function(x) mean(x, na.rm = TRUE))
-    data_to_add_n <- do.call('rbind', replicate(nrow(missing_df), data_to_add_1, simplify = FALSE))
-
-    missing_df_mean <- cbind(missing_df, data_to_add_n)
-
-    data <- rbind(data, missing_df_mean)
-    data <- data[order(data[[var_time_name]]),]
-    rownames(data) <- c(1:nrow(data))
-
-  }else if(method == 'median'){
-    data_to_add_1 <- data %>% select(-var_time_name) %>% summarise_all(function(x) median(x, na.rm = TRUE))
-    data_to_add_n <- do.call('rbind', replicate(nrow(missing_df), data_to_add_1, simplify = FALSE))
-
-    missing_df_mean <- cbind(missing_df, data_to_add_n)
-
-    data <- rbind(data, missing_df_mean)
-    data <- data[order(data[[var_time_name]]),]
-    rownames(data) <- c(1:nrow(data))
+  }else if(method == 'mean' | method == 'median' | method == 'min' | method == 'max'){
+    data <- aux_methods_timeliness(data, var_time_name, missing_df, method)
   }else{
     data <- 'Method not correct'
   }
-
-
 
   return(data)
 }
