@@ -116,6 +116,8 @@ impute_vars <- function(var, method, id, ranges){
     estim <- impmean2(var = var, id = id, future = TRUE)
   }else if(method == 'meanranges'){
     estim <- impRangesMean(id = id, ranges)
+  }else if(method == 'minmaxranges'){
+    estim <- impRangesMinMax(var = var, id = id, ranges)
   }else{
     estim <- NA
   }
@@ -339,20 +341,13 @@ impRangesMean <- function(id, ranges){
 
 }
 
+impRangesMinMax <- function(var, id, ranges){
 
+  a <- 4
 
+  pred <- ifelse(var[id] < ranges[1], ranges[1], ranges[2])
 
-#
-# impRangesMaxMin <- function(data, ranges, ind, listout){
-#
-#   for (i in ind){
-#
-#     data[[names(listout)[i]]][listout[[i]]] <- ifelse(data[[names(listout)[i]]][listout[[i]]] < ranges[[names(listout)[i]]][1], ranges[[names(listout)[i]]][1],
-#                                                       ifelse(data[[names(listout)[i]]][listout[[i]]] > ranges[[names(listout)[i]]][2], ranges[[names(listout)[i]]][2], 'error'))
-#
-#   }
-#
-#   return(data)
-#
-# }
-#
+  return(pred)
+
+}
+
