@@ -138,6 +138,10 @@ generateRangeData <- function(data){
 
 outofrange <- function(data, ranges){
   check<-list()
+
+  # ind_ranges <- which(colnames(ranges) %in% colnames(data))
+  # ranges <- ranges[,ind_ranges]
+
   for (i in 1:ncol(data)){
     if(is.numeric(data[,i])){
 
@@ -149,7 +153,7 @@ outofrange <- function(data, ranges){
 }
 
 isoutofrange <- function(data, ranges){
-  browser()
+
   out <- data.frame(matrix(NA, nrow = 1, ncol = ncol(data)))
 
   for(i in 1:ncol(data)){
@@ -164,6 +168,25 @@ isoutofrange <- function(data, ranges){
   return(out)
 
 }
+
+whichisout <- function(data, ranges, selcolout){
+
+  l_out <- list()
+
+  for(i in 1:ncol(data)){
+
+    if(selcolout[,i]){
+
+      l_out[[colnames(selcolout)[i]]] <- which(data[,i] < ranges[1,i] | data[,i] > ranges[2,i])
+
+    }
+
+  }
+
+  return(l_out)
+
+}
+
 
 
 Range<-function(data, ranges){
