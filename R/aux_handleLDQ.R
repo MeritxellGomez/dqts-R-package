@@ -46,10 +46,33 @@ aux_df_timeliness <- function(x, var_time_name){
   return(df)
 }
 
+aux_methods_timeliness <- function(data, var_time_name, missing_df, method){
+
+  if(method == 'mean'){
+    data_to_add_1 <- data %>% select(-var_time_name) %>% summarise_all(function(x) mean(x, na.rm = TRUE))
+  }else if(method == 'median'){
+    data_to_add_1 <- data %>% select(-var_time_name) %>% summarise_all(function(x) median(x, na.rm = TRUE))
+  }else if(method == 'min'){
+    data_to_add_1 <- data %>% select(-var_time_name) %>% summarise_all(function(x) min(x, na.rm = TRUE))
+  }else if(method == 'max'){
+    data_to_add_1 <- data %>% select(-var_time_name) %>% summarise_all(function(x) max(x, na.rm = TRUE))
+  }else{
+    data <- 'Method not correct'
+  }
+
+  data_to_add_n <- do.call('rbind', replicate(nrow(missing_df), data_to_add_1, simplify = FALSE))
+
+  missing_df_mean <- cbind(missing_df, data_to_add_n)
+
+  data <- rbind(data, missing_df_mean)
+  data <- data[order(data[[var_time_name]]),]
+  rownames(data) <- c(1:nrow(data))
+
+  return(data)
+
+}
+
 # auxiliars Range ---------------------------------------------------------
-
-
-
 
 imputeRangesMeanRanges <- function(data, ranges, ind, listout){
 
@@ -244,7 +267,7 @@ predictknn<-function(datavar, kneighbors, npred, pond){
     nw <- w/(sum(w))
     pred <- (nw %*% m)
   }else{
-    pred <- apply(m, 2, function(x)mean(x))
+    pred <- apply(m, 2, function(x)mean(x, na.rm = TRUE))
   }
 
   return(pred)
