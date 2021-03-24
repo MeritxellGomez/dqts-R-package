@@ -169,26 +169,6 @@ isoutofrange <- function(data, ranges){
 
 }
 
-whichisout <- function(data, ranges, selcolout){
-
-  l_out <- list()
-
-  for(i in 1:ncol(data)){
-
-    if(selcolout[,i]){
-
-      l_out[[colnames(selcolout)[i]]] <- which(data[,i] < ranges[1,i] | data[,i] > ranges[2,i])
-
-    }
-
-  }
-
-  return(l_out)
-
-}
-
-
-
 Range<-function(data, ranges){
 
   out <- outofrange(data, ranges)
