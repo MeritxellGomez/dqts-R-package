@@ -1,4 +1,3 @@
-
 #' Handle low data quality
 #'
 #' This function allows to correct the low data quality of one of the metrics. Once the process is done, it returns the data frame with some values modified. Do, the new value for the metric chosen is 1.
@@ -23,12 +22,12 @@ handleDQ <- function(data, metric, columnDate = NULL, var_time_name = NULL, rang
   else if(is.null(columnDate)){columnDate <- which(colnames(data) == var_time_name)}
   else if(is.null(var_time_name)){var_time_name <- colnames(data)[columnDate]}
 
-  if(metric == "Completeness"){HLCompleteness(data, method)}
-  else if(metric == "TimeUniqueness"){HLTimeUniqueness(data, var_time_name, method)}
-  else if(metric == 'Range'){HLRange(data, ranges, method)}
-  else if(metric == 'Consistency' | metric == 'Typicality' | metric == 'Moderation'){HLNormality(data, metric)}
+  if(metric == "Formats" | metric == "Names"){HLConformity(data, metric, method, dataref)}
   else if(metric == "Timeliness"){HLTimeliness(data, var_time_name, maxdif, units, method)}
-  #else if(metric == "Formats" | metric == "Names"){HLConformity(data, metric, dataref)}
+  else if(metric == "TimeUniqueness"){HLTimeUniqueness(data, var_time_name, method)}
+  else if(metric == 'Range'){HLRange(data, method, ranges)}
+  else if(metric == 'Consistency' | metric == 'Typicality' | metric == 'Moderation'){HLNormality(data, metric)}
+  else if(metric == "Completeness"){HLCompleteness(data, method)}
   else(stop('Incorrect metric name'))
 
 }
@@ -46,9 +45,6 @@ HLConformity <- function(data, metric, dataref){
 
 
 }
-
-
-
 
 # Handling Time Uniqueness ------------------------------------------------
 
@@ -116,11 +112,9 @@ HLTimeliness <- function(data, var_time_name, maxdif, units, method){
   return(data)
 }
 
-
-
 # Handling Low Range ------------------------------------------------------
 
-HLRange <- function(data, ranges, method){
+HLRange <- function(data, method, ranges){
 
   if(is.null(ranges)){
     warning('Range data frame should be given. The maximum and minimum values from a sample of original data have been taken as range data')
@@ -133,7 +127,7 @@ HLRange <- function(data, ranges, method){
 
   list_out <- lapply(out_positions, idlist)
 
-  data <- impute_ids(data, list_out, method)
+  data <- impute(data, list_out, method, ranges = ranges)
 
   return(data)
 
@@ -172,7 +166,7 @@ HLCompleteness <- function(data, method){
 
   list_na <- lapply(na_positions, idlist)
 
-  data <- impute_ids(data, list_na, method)
+  data <- impute(data = data, list_ids = list_na, method = method, ranges = NULL)
 
   return(data)
 
