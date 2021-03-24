@@ -122,36 +122,21 @@ HLTimeliness <- function(data, var_time_name, maxdif, units, method){
 
 HLRange <- function(data, ranges, method){
 
-  #añadir que se pueda escoger method = mean (la media de los limits),
-  #limits (si sale por arriba poner el max y si sale por abajo poner el min), imputemethods
-
   if(is.null(ranges)){
     warning('Range data frame should be given. The maximum and minimum values from a sample of original data have been taken as range data')
     ranges <- generateRangeData(data)
   }
 
-  listout <- isoutofrange(data, ranges) #devuelve lista de variables y cada elemento contiene vector de indices out of range
+  selcolout <- isoutofrange(data, ranges)
 
-  ind <- c(1:length(listout))[sapply(listout, function(x) !is.null(x))]
+  out_positions <- outofrange(data, ranges)
 
-  if(method == 'mean'){
-    data <- imputeRangesMean(data, ranges, ind, listout)
-  }else if(method == 'meanranges'){
-    data <- imputeRangesMeanRanges(data, ranges, ind, listout)
-  }else if(method == 'median'){
-    data <- imputeRangesMedian(data, ranges, ind, listout)
-  }else if(method == 'maxmin'){
-    data <- imputeRangesMaxMin(data, ranges, ind, listout)
-  }else if(method == 'KNPTS'){
-    #podemos ponerlos a NA y luego hacer imputacion
-    data <- imputeRangesKNPTS(data, ranges, ind, listout)
-  }else if(method == 'missing'){
-    data <- imputeRangesNA(data, ranges, ind, listout)
-  }else{
-    data <- 'Method not correct'
-  }
+  list_out <- lapply(out_positions, idlist)
+
+  data <- impute_ids(data, list_out, method)
 
   return(data)
+
 }
 
 # Handling Low Normality  ------------------------------------------------
@@ -179,26 +164,15 @@ HLNormality <- function(data, metric){
 }
 
 # Handling Low Completeness -----------------------------------------------
-HLCompleteness <- function(data, method="mean"){
+HLCompleteness <- function(data, method){
 
-  nacol <- apply(data, 2, function(x) sum(is.na(x)))
+  selcolna <- apply(data, 2, function(x) ifelse(sum(is.na(x))!=0, TRUE, FALSE))
 
-  #hay que añadir la condicion de que solo mire para las columnas numericas.
-  #Alternativa: buscar forma de imputar fechas, factors, characters, ...
+  na_positions <- lapply(data[which(selcolna != 0)],  function(x) which(is.na(x)))
 
-  imputation <- apply(data[which(nacol != 0)], 2, function(x) imputena(method, x))
+  list_na <- lapply(na_positions, idlist)
 
-  nvar <- length(which(nacol != 0))
-
-  for(i in 1:nvar){
-    nsub <- length(imputation[[i]])
-    ind <- which(is.na(data[[names(imputation[i])]]))
-    indexs <- idlist(ind)
-
-    for(j in 1:nsub){
-      data[[names(imputation[i])]][indexs[[j]]] <- imputation[[i]][[j]]
-    }
-  }
+  data <- impute_ids(data, list_na, method)
 
   return(data)
 
