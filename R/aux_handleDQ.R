@@ -22,8 +22,8 @@ aux_timeuniqueness <- function(vecdupl, data, var_time_name, method){
 
 }
 
-# auxiliars Timeliness ----------------------------------------------------
 
+# auxiliars Timeliness ----------------------------------------------------
 #vec contains two dates. output is a df with dates between and NA in the rest of vars
 aux_timeliness <- function(vec, units, var_time_name){
 
@@ -72,45 +72,33 @@ aux_methods_timeliness <- function(data, var_time_name, missing_df, method){
 
 }
 
-# auxiliars Range ---------------------------------------------------------
 
-imputeRangesMeanRanges <- function(data, ranges, ind, listout){
+# auxiliars Range and Completeness ---------------------------------------------------------
 
-  for (i in ind){
-    data[[names(listout)[i]]][listout[[i]]] <- mean(ranges[[names(listout)[i]]])
-  }
-  return(data)
-}
+impute <- function(data, list_ids, method, ranges){
 
+  nvar <- length(list_ids)
 
-imputeRangesMean <- function(data, ranges, ind, listout){
+  l <- list()
+  for(i in 1:nvar){
 
-  for (i in ind){
-    data[[names(listout)[i]]][listout[[i]]] <- mean(data[[names(listout)[i]]][-listout[[i]]], na.rm = TRUE)
+    name_var <- names(list_ids)[i]
+    n <- length(list_ids[[i]])
 
-  }
+    var_na <- list_ids[[i]]
 
-  return(data)
+    if(!is.null(ranges)){
+      ranges_var <- ranges[[name_var]]
+    }
 
-}
+    l[[i]] <- lapply(var_na, function(x) impute_vars(var = data[[name_var]], method = method, id = x, ranges = ranges_var))
+    names(l)[i] <- name_var
 
-imputeRangesMedian <- function(data, ranges, ind, listout){
+    for(j in 1:n){
 
-  for (i in ind){
-    data[[names(listout)[i]]][listout[[i]]] <- median(data[[names(listout)[i]]][-listout[[i]]], na.rm = TRUE)
+      data[[name_var]][list_ids[[name_var]][[j]]] <- l[[name_var]][[j]]
 
-  }
-
-  return(data)
-
-}
-
-imputeRangesMaxMin <- function(data, ranges, ind, listout){
-
-  for (i in ind){
-
-    data[[names(listout)[i]]][listout[[i]]] <- ifelse(data[[names(listout)[i]]][listout[[i]]] < ranges[[names(listout)[i]]][1], ranges[[names(listout)[i]]][1],
-                                                      ifelse(data[[names(listout)[i]]][listout[[i]]] > ranges[[names(listout)[i]]][2], ranges[[names(listout)[i]]][2], 'error'))
+    }
 
   }
 
@@ -118,32 +106,46 @@ imputeRangesMaxMin <- function(data, ranges, ind, listout){
 
 }
 
-imputeRangesNA <- function(data, ranges, ind, listout){
+impute_vars <- function(var, method, id, ranges){
 
-  for(i in ind){
+  if(method == "mean" | method == 'median' | method == 'min' | method == 'max'){
+    estim <- impsimple(var = var, id = id, method = method, future = TRUE)
+  }else if(method == "KNPTS"){
+    estim <- impKNPTS(var = var, id = id, future = TRUE)
+  }else if(method == "mean2"){
+    estim <- impmean2(var = var, id = id, future = TRUE)
+  }else if(method == 'meanranges'){
+    estim <- impRangesMean(id = id, ranges)
+  }else{
+    estim <- NA
+  }
 
-    data[[names(listout)[i]]][listout[[i]]] <- NA
+  return(estim)
+
+}
+
+idlist <- function(id){
+
+  idbreak <- which(diff(id) > 1)
+  idbreak <- c(idbreak, length(id))
+  n <- length(idbreak)
+
+  idlist <- list()
+
+  from <- 1
+
+  for(i in 1:n){
+
+    idlist[[i]] <- id[from:idbreak[i]]
+    from <- idbreak[i] + 1
 
   }
 
-  return(data)
+  return(idlist)
 
 }
 
-imputeRangesKNPTS <- function(data, ranges, ind, listout){
-
-  #darle una vuelta a ver si puedo aprovechar el de impute. Fijo que si
-
-}
-
-
-
-
-
-
-
-# auxiliars Completeness --------------------------------------------------
-#imputation
+#KNPTS
 
 d_euclidean <- function(vec_x, vec_y){
 
@@ -152,8 +154,6 @@ d_euclidean <- function(vec_x, vec_y){
   return(d)
 
 }
-
-
 #funcion que de un data frame salido de la funcion distance_knn (ordenado), escoger los k más cercanos sin NAS
 kneighbors <- function(distk, k){
 
@@ -164,14 +164,12 @@ kneighbors <- function(distk, k){
   return(kneig)
 
 }
-
-
 #funcion que calcula la distancia entre los datos que se introducen (VECTOR) y
 #todos los intervalos anteriores. Devuelve df con 3 cols: initialindex, finalindex, distancevalue
 #future = TRUE permite usar datos futuros
-distance_knn <- function(datavar, idna = idna, h, npred, dist = "Euclidean", future = TRUE){
+distance_knn <- function(datavar, id = id, h, npred, dist = "Euclidean", future = TRUE){
 
-  firstna <- min(idna)
+  firstna <- min(id)
 
   #horizon data to be compared
   h_data <- datavar[(firstna - h) : (firstna - 1)]
@@ -225,7 +223,7 @@ distance_knn <- function(datavar, idna = idna, h, npred, dist = "Euclidean", fut
   #if future == TRUE, look for the distances with future data
   if(future){
 
-    initial2_0 <- max(idna) + 1
+    initial2_0 <- max(id) + 1
     initial2_f <- length(datavar) - h - npred + 1
     j <- 1
 
@@ -256,7 +254,6 @@ distance_knn <- function(datavar, idna = idna, h, npred, dist = "Euclidean", fut
 
 }
 
-
 predictknn<-function(datavar, kneighbors, npred, pond){
 
   m <- as.matrix(kneighbors[4:ncol(kneighbors)])
@@ -274,72 +271,57 @@ predictknn<-function(datavar, kneighbors, npred, pond){
 
 }
 
+impsimple<- function(var, id, method, future){
 
-
-
-idlist <- function(idna){
-
-  idbreak <- which(diff(idna) > 1)
-  idbreak <- c(idbreak, length(idna))
-  n <- length(idbreak)
-
-  idlist <- list()
-
-  from <- 1
-
-  for(i in 1:n){
-
-    idlist[[i]] <- idna[from:idbreak[i]]
-    from <- idbreak[i] + 1
-
-  }
-
-  return(idlist)
-
-}
-
-impmean<- function(var, idna, future = TRUE){
-
-  last <- min(idna) - 1
+  last <- min(id) - 1
   trainset <- var[1:last]
 
   if(future){
-    trainset <- c(trainset, var[(max(idna)+1) : length(var)])
+    trainset <- c(trainset, var[(max(id)+1) : length(var)])
   }
 
-  pred <- rep(mean(trainset, na.rm = TRUE), length(idna))
+  if(method == 'mean'){
+    pred <- rep(mean(trainset, na.rm = TRUE), length(id))
+  }else if(method == 'median'){
+    pred <- rep(median(trainset, na.rm = TRUE), length(id))
+  }else if(method == 'min'){
+    pred <- rep(min(trainset, na.rm = TRUE), length(id))
+  }else if(method == 'max'){
+    pred <- rep(max(trainset, na.rm = TRUE), length(id))
+  }else{
+    pred <- 0
+  }
 
   return(pred)
 
 }
 
-impmean2<- function(var, idna, future = TRUE){
+impmean2<- function(var, id, future = TRUE){
 
-  a <- var[min(idna) - 1]
-  b <- var[max(idna) + 1]
+  a <- var[min(id) - 1]
+  b <- var[max(id) + 1]
 
   value <- mean(c(a,b))
 
-  pred <- rep(value, length(idna))
+  pred <- rep(value, length(id))
 
   return(pred)
 
 }
 
+impKNPTS<-function(var, id, future = TRUE){
 
-impKNPTS<-function(var, idna, future = TRUE){
-
-  npred <- length(idna)
+  npred <- length(id)
 
   #dejo el crossvalidation para mas tarde... de momento escojo un valor cualquiera de k
   #cvres <- cvknnvar(var.train = traincv, var.test = testcv, h = n, npred = n, kmax = 5, pond = FALSE)
 
   # k <- cvres['k'][which(cvres['DTW'] == min(cvres['DTW']))]
   #
-  # dvar <- var[1:(min(idna) - 1)]
+  # dvar <- var[1:(min(id) - 1)]
   # pred <- predict.knn(datavar = dvar, kneighbors = k, npred = n, pond = FALSE)
 
-  distknn <- distance_knn(datavar = var, idna = idna, h = 3, npred = npred, dist = "Euclidean", future = TRUE)
+  distknn <- distance_knn(datavar = var, id = id, h = 3, npred = npred, dist = "Euclidean", future = TRUE)
 
   kn <- kneighbors(distknn, k = 3)
 
@@ -349,65 +331,28 @@ impKNPTS<-function(var, idna, future = TRUE){
 
 }
 
-createTimeFeatures <- function(trainset, var_time_name){
+impRangesMean <- function(id, ranges){
 
-  var <- trainset[[var_time_name]]
+  pred <- rep(mean(ranges), length(id))
 
-  trainset[['year']] <- lubridate::year(var)
-  trainset[['month']] <- lubridate::month(var)
-  trainset[['sinmonth']] <- sin(2*pi*trainset[['month']] / 12)
-  trainset[['cosmonth']] <- cos(2*pi*trainset[['month']] / 12)
-  trainset[['day']] <- lubridate::day(var)
-  trainset[['sinday']] <- sin(2*pi*trainset[['day']] / 31)
-  trainset[['cosday']] <- cos(2*pi*trainset[['day']] / 31)
-  trainset[['hour']] <- lubridate::hour(var)
-  trainset[['sinhour']] <- sin(2*pi*trainset[['hour']] / 24)
-  trainset[['coshour']] <- cos(2*pi*trainset[['hour']] / 24)
-  trainset[['minute']] <- lubridate::minute(var)
-  trainset[['sinminute']] <- sin(2*pi*trainset[['minute']] / 60)
-  trainset[['cosminute']] <- cos(2*pi*trainset[['minute']] / 60)
-  trainset[['second']] <- lubridate::second(var)
-  trainset[['sinsecond']] <- sin(2*pi*trainset[['second']] / 60)
-  trainset[['cossecond']] <- cos(2*pi*trainset[['second']] / 60)
-
-  return(trainset)
-}
-
-impKNFTS <- function(var, idna, future = TRUE){
-
-  firstna <- min(idna)
-
-  trainset <- data[-idna,]
-  trainset <- createTimeFeatures(trainset, var_time_name)
-
-  #caret::train() ... no tengo idea de como escribir esto cogiendo los nombres de las variables que toca
-
-}
-
-imputation <- function(var,method, idna){
-
-  if(method == "mean"){
-    estim <- impmean(var = var, idna = idna)
-  }else if(method == "KNPTS"){
-    estim <- impKNPTS(var = var, idna = idna, future = TRUE)
-  }else if(method == "mean2"){
-    estim <- impmean2(var = var, idna = idna, future = TRUE)
-  }else{
-    estim <- 0
-  }
-
-  return(estim)
+  return(pred)
 
 }
 
 
-imputena <- function(method, var){
 
-  idna <- which(is.na(var))
-  idnalist <- idlist(idna)
 
-  estim <- lapply(idnalist, function(x)imputation(var, method, x))
-
-  return(estim)
-
-}
+#
+# impRangesMaxMin <- function(data, ranges, ind, listout){
+#
+#   for (i in ind){
+#
+#     data[[names(listout)[i]]][listout[[i]]] <- ifelse(data[[names(listout)[i]]][listout[[i]]] < ranges[[names(listout)[i]]][1], ranges[[names(listout)[i]]][1],
+#                                                       ifelse(data[[names(listout)[i]]][listout[[i]]] > ranges[[names(listout)[i]]][2], ranges[[names(listout)[i]]][2], 'error'))
+#
+#   }
+#
+#   return(data)
+#
+# }
+#
