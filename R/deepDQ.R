@@ -143,7 +143,7 @@ deepRange <- function(data, ranges, var_time_name, position){
     ranges <- generateRangeData(data)
   }
 
-  out <- isoutofrange(data, ranges)
+  out <- outofrange(data, ranges)
 
   if(position){
 

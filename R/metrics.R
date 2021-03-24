@@ -136,7 +136,7 @@ generateRangeData <- function(data){
   return(df)
 }
 
-isoutofrange <- function(data, ranges){
+outofrange <- function(data, ranges){
   check<-list()
   for (i in 1:ncol(data)){
     if(is.numeric(data[,i])){
@@ -148,9 +148,27 @@ isoutofrange <- function(data, ranges){
   return(check)
 }
 
+isoutofrange <- function(data, ranges){
+  browser()
+  out <- data.frame(matrix(NA, nrow = 1, ncol = ncol(data)))
+
+  for(i in 1:ncol(data)){
+
+    vec_logical <- (data[,i] < ranges[1,i] | data[,i] > ranges[2,i])
+    out[1,i] <- ifelse(sum(vec_logical, na.rm = TRUE)!=0, TRUE, FALSE)
+
+  }
+
+  colnames(out) <- colnames(data)
+
+  return(out)
+
+}
+
+
 Range<-function(data, ranges){
 
-  out <- isoutofrange(data, ranges)
+  out <- outofrange(data, ranges)
   totalout <- length(unlist(out))
   n<- length(which(!is.na(data)))
 
