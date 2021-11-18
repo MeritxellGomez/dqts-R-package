@@ -143,9 +143,9 @@ outofrange <- function(data, ranges){
   # ranges <- ranges[,ind_ranges]
 
   for (i in 1:ncol(data)){
-    if(is.numeric(data[,i])){
+    if(is.numeric(data[[i]])){
 
-      aux<-which(data[,i] < ranges[1,i] | data[,i] > ranges[2,i])
+      aux<-which(data[[i]] < ranges[1,i] | data[[i]] > ranges[2,i])
       check[[colnames(data)[i]]] <- aux
     }
   }
@@ -158,7 +158,7 @@ isoutofrange <- function(data, ranges){
 
   for(i in 1:ncol(data)){
 
-    vec_logical <- (data[,i] < ranges[1,i] | data[,i] > ranges[2,i])
+    vec_logical <- (data[[i]] < ranges[1,i] | data[[i]] > ranges[2,i])
     out[1,i] <- ifelse(sum(vec_logical, na.rm = TRUE)!=0, TRUE, FALSE)
 
   }
