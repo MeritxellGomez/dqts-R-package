@@ -1,39 +1,49 @@
-# Completeness ------------------------------------------------------------
+# Conformity --------------------------------------------------------------
+generateReferenceData <- function(data){
 
-Completeness<-function(data){
+  mysample <- data[sample(nrow(data), round(0.3*nrow(data))),]
 
-  nr<-nrow(data)
-  nc<-ncol(data)
-  ncl<-nr*nc
-  ic<-length(which(is.na(data)))
-  comp<-1-ic/ncl
+  types <- lapply(mysample, class)
+  types <- lapply(types, function(x) if(length(x) != 1){x <- paste(x, collapse = " ")}else{x <- x})
+  df<- data.frame(types, stringsAsFactors = FALSE)
 
-  return(comp)
+  colnames(df) <- colnames(mysample)
+
+  return(df)
+
 }
 
-CompletenessObservations<- function(data){
+Formats<-function(data, dataref){
 
-  a<-apply(data, 1, function(x) length(which(is.na(x))))
-  nr<-nrow(data)
-  nic<-length(which(a==ncol(data)))
-  compobv=1-nic/nr
+  formats <- lapply(data, class)
+  formats <- lapply(formats, function(x) if(length(x) != 1){x <- paste(x, collapse = " ")}else{x <- x})
+  formats <- data.frame(formats, stringsAsFactors = FALSE)
 
-  if(compobv!=1) warning('One or more rows may be empty.')
+  if(identical(formats[1,],dataref[1,])==FALSE) warning('The variable formats are not correct')
 
-  return(compobv)
+  identicals <- length(which(formats[1,] == dataref[1,]))
+
+  formatsvalue <- identicals/ncol(formats)
+
+  return(formatsvalue)
+
 }
 
-CompletenessVariables<- function(data){
+Names <- function(data, dataref){
 
-  a<-apply(data, 2, function(x) length(which(is.na(x))))
-  nc<-ncol(data)
-  nic<-length(which(a==nrow(data)))
-  compvar=1-nic/nc
+  col <- colnames(data)
+  colref <- colnames(dataref)
 
-  if(compvar!=1) warning('One or more columns may be empty')
+  if(identical(col,colref)==FALSE) warning('The variable names are not correct')
 
-  return(compvar)
+  identicals <- length(which(unlist(col) == unlist(colref)))
+
+  namesvalue <- identicals/length(unlist(col))
+
+  return(namesvalue)
+
 }
+
 
 
 # Uniqueness --------------------------------------------------------------
@@ -48,6 +58,65 @@ TimeUniqueness <- function(data, var_time_name){
   length(unique(data[[var_time_name]])) / length(data[[var_time_name]])
 
 }
+
+
+# Timeliness --------------------------------------------------------------
+
+generateMaxDif <- function(data, var_time_name){
+
+  timevar <- data[[var_time_name]]
+  timevarsample <- sample(timevar, size = trunc(0.3*length(timevar)))
+
+  diffs <- diff(timevarsample)
+  uniq <- unique(diffs)
+  maxdif <- uniq[which.max(tabulate(match(diffs, uniq)))]
+
+  return(maxdif)
+
+}
+
+Timeliness<-function(data, var_time_name, maxdif, units){
+  #se contempla 'secs', 'mins', 'hours', 'days', 'months'
+
+  if(units == 'months'){
+    maxdif <- 31
+    units2 <- 'days'
+  }else{
+    units2 <- units
+  }
+
+  date_vec <- data[[var_time_name]]
+  n <- length(date_vec)
+  dif <- difftime(date_vec[2:n], date_vec[1:(n-1)], units = units)
+
+  outdif <- length(which(dif > maxdif))
+
+  if(outdif == 0){
+    timeliness <- 1
+  }else{
+    pos <- which(dif > maxdif)
+    loss.start <- data[[var_time_name]][pos]
+    loss.finish <- data[[var_time_name]][pos+1]
+
+    waiting.time <- difftime(loss.finish, loss.start, units = units2)
+
+    if(units == 'months'){
+      missing.amount <- round(((as.numeric(abs(waiting.time)))/maxdif)-1)
+    }else if(units == 'days'){
+      missing.amount <- trunc(((as.numeric(abs(waiting.time)))/maxdif))
+    }
+    else{
+      missing.amount <- trunc(((as.numeric(abs(waiting.time)))/maxdif)-1)
+    }
+
+    totaltimes <- sum(missing.amount) + length(data[[var_time_name]])
+
+    timeliness <- length(data[[var_time_name]]) / totaltimes
+  }
+
+  return(timeliness)
+}
+
 
 
 # Range -------------------------------------------------------------------
@@ -67,21 +136,42 @@ generateRangeData <- function(data){
   return(df)
 }
 
-isoutofrange <- function(data, ranges){
+outofrange <- function(data, ranges){
   check<-list()
-  for (i in 1:ncol(data)){
-    if(is.numeric(data[,i])){
 
-      aux<-which(data[,i] < ranges[1,i] | data[,i] > ranges[2,i])
+  # ind_ranges <- which(colnames(ranges) %in% colnames(data))
+  # ranges <- ranges[,ind_ranges]
+
+  for (i in 1:ncol(data)){
+    if(is.numeric(data[[i]])){
+
+      aux<-which(data[[i]] < ranges[1,i] | data[[i]] > ranges[2,i])
       check[[colnames(data)[i]]] <- aux
     }
   }
   return(check)
 }
 
+isoutofrange <- function(data, ranges){
+
+  out <- data.frame(matrix(NA, nrow = 1, ncol = ncol(data)))
+
+  for(i in 1:ncol(data)){
+
+    vec_logical <- (data[[i]] < ranges[1,i] | data[[i]] > ranges[2,i])
+    out[1,i] <- ifelse(sum(vec_logical, na.rm = TRUE)!=0, TRUE, FALSE)
+
+  }
+
+  colnames(out) <- colnames(data)
+
+  return(out)
+
+}
+
 Range<-function(data, ranges){
 
-  out <- isoutofrange(data, ranges)
+  out <- outofrange(data, ranges)
   totalout <- length(unlist(out))
   n<- length(which(!is.na(data)))
 
@@ -205,109 +295,41 @@ Normality <- function(data, outnormality, metric, group = TRUE){
 }
 
 
-# Timeliness --------------------------------------------------------------
+# Completeness ------------------------------------------------------------
 
-generateMaxDif <- function(data, var_time_name){
+Completeness<-function(data){
 
-  timevar <- data[[var_time_name]]
-  timevarsample <- sample(timevar, size = trunc(0.3*length(timevar)))
+  nr<-nrow(data)
+  nc<-ncol(data)
+  ncl<-nr*nc
+  ic<-length(which(is.na(data)))
+  comp<-1-ic/ncl
 
-  diffs <- diff(timevarsample)
-  uniq <- unique(diffs)
-  maxdif <- uniq[which.max(tabulate(match(diffs, uniq)))]
-
-  return(maxdif)
-
+  return(comp)
 }
 
-Timeliness<-function(data, var_time_name, maxdif, units){
-  #se contempla 'secs', 'mins', 'hours', 'days', 'months'
+CompletenessObservations<- function(data){
 
-  if(units == 'months'){
-    maxdif <- 31
-    units2 <- 'days'
-  }else{
-    units2 <- units
-  }
+  a<-apply(data, 1, function(x) length(which(is.na(x))))
+  nr<-nrow(data)
+  nic<-length(which(a==ncol(data)))
+  compobv=1-nic/nr
 
-  date_vec <- data[[var_time_name]]
-  n <- length(date_vec)
-  dif <- difftime(date_vec[2:n], date_vec[1:(n-1)], units = units)
+  if(compobv!=1) warning('One or more rows may be empty.')
 
-  outdif <- length(which(dif > maxdif))
-
-  if(outdif == 0){
-    timeliness <- 1
-  }else{
-    pos <- which(dif > maxdif)
-    loss.start <- data[[var_time_name]][pos]
-    loss.finish <- data[[var_time_name]][pos+1]
-
-    waiting.time <- difftime(loss.finish, loss.start, units = units2)
-
-    if(units == 'months'){
-      missing.amount <- round(((as.numeric(abs(waiting.time)))/maxdif)-1)
-    }else if(units == 'days'){
-      missing.amount <- trunc(((as.numeric(abs(waiting.time)))/maxdif))
-    }
-    else{
-      missing.amount <- trunc(((as.numeric(abs(waiting.time)))/maxdif)-1)
-    }
-
-    totaltimes <- sum(missing.amount) + length(data[[var_time_name]])
-
-    timeliness <- length(data[[var_time_name]]) / totaltimes
-  }
-
-  return(timeliness)
+  return(compobv)
 }
 
+CompletenessVariables<- function(data){
 
+  a<-apply(data, 2, function(x) length(which(is.na(x))))
+  nc<-ncol(data)
+  nic<-length(which(a==nrow(data)))
+  compvar=1-nic/nc
 
-# Conformity --------------------------------------------------------------
-generateReferenceData <- function(data){
+  if(compvar!=1) warning('One or more columns may be empty')
 
-  mysample <- data[sample(nrow(data), round(0.3*nrow(data))),]
-
-  types <- lapply(mysample, class)
-  types <- lapply(types, function(x) if(length(x) != 1){x <- paste(x, collapse = " ")}else{x <- x})
-  df<- data.frame(types, stringsAsFactors = FALSE)
-
-  colnames(df) <- colnames(mysample)
-
-  return(df)
-
-}
-
-Formats<-function(data, dataref){
-
-  formats <- lapply(data, class)
-  formats <- lapply(formats, function(x) if(length(x) != 1){x <- paste(x, collapse = " ")}else{x <- x})
-  formats <- data.frame(formats, stringsAsFactors = FALSE)
-
-  if(identical(formats[1,],dataref[1,])==FALSE) warning('The variable formats are not correct')
-
-  identicals <- length(which(formats[1,] == dataref[1,]))
-
-  formatsvalue <- identicals/ncol(formats)
-
-  return(formatsvalue)
-
-}
-
-Names <- function(data, dataref){
-
-  col <- colnames(data)
-  colref <- colnames(dataref)
-
-  if(identical(col,colref)==FALSE) warning('The variable names are not correct')
-
-  identicals <- length(which(unlist(col) == unlist(colref)))
-
-  namesvalue <- identicals/length(unlist(col))
-
-  return(namesvalue)
-
+  return(compvar)
 }
 
 
