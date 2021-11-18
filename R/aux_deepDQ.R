@@ -7,8 +7,6 @@ bigMissingTimes <- function(dT, n=1){
 
 }
 
-
-
 # aggregate ---------------------------------------------------------------
 
 #hay que hacer una función que agrupe los datos teniendo en cuenta la fecha. Cada 30 minutos que haga una media de la temperatura
