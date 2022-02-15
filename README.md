@@ -20,6 +20,11 @@ The global value of quality is a combination of all of those 11 metric values.
 
 1.	Installation process: to install the dqts package the following code must be executed using the devtools package
 
+```{r}
+#devtools::install_github('blabla')
+library(dqts)
+```
+
 2.	Dependencies: 
 - You must ensure that the following R libraries are installed on your computer: here, ggplot2, magrittr, dplyr, reshape2
 - This R package was built using a 3.6.3 R version.
@@ -38,16 +43,31 @@ In data folder you can find three simulated data files to test the available fun
 You can execute the following code tih different purproses:  
 
 - to know the overall DQ of weatherdf.RData
-
+```{r warning=FALSE}
+overall_dq <- DQ(data = weatherdf, var_time_name = 'date', maxdif = 1, units = 'days', ranges = weatherRange)
+overall_dq
+```
 
 - to know the DQ of weatherdf.RData by windows. You should change initialWindow, skip and fixedWindow to execute different sizes of windows. 
-
+```{r warning=FALSE}
+window_dq <- DQ(data = weatherdf, var_time_name = 'date', maxdif = 1, units = 'days', ranges = weatherRange, windows = TRUE, initialWindow = 50, skip = 10, fixedWindow = FALSE)
+window_dq
+```
 
 - to plot the results of DQ function. You can use the logical arguments normal to decide if normality metrics (Consistency, Typicality and Moderation) are shown in the graph and totalquality to show the overall DQ metric.
-
+```{r warning=FALSE}
+dqplot(overall_dq, totalquality = TRUE, normal = TRUE)
+dqplot(window_dq, totalquality = FALSE, normal = FALSE)
+```
 
 - to in-depth inspection of quality issues related to those metrics that not achieve the perfect score. The following example shows the problem with Time Uniqueness metric. You should change the argument metric to inspect different metrics. 
-
+```{r}
+deepDQ(data = weatherdf, metric = 'TimeUniqueness', var_time_name = 'date', position = TRUE)
+```
 
 - to solve issues with a certain metric. Then, you can check that the quality is higher. 
+```{r warning=FALSE}
+new_weatherdf <- handleDQ(data = weatherdf, metric = 'TimeUniqueness', var_time_name = 'date', method = 'deletion')
+DQ(data =new_weatherdf, var_time_name = 'date', maxdif = 1, units = 'days', ranges = weatherRange)
+```
 
