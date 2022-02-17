@@ -21,7 +21,7 @@ The global value of quality is a combination of all of those 11 metric values.
 1.	Installation process: to install the dqts package the following code must be executed using the devtools package
 
 ```{r}
-#devtools::install_github('blabla')
+devtools::install_github('https://github.com/MeritxellGomez/dqts-R-package')
 library(dqts)
 ```
 
@@ -45,13 +45,11 @@ You can execute the following code tih different purproses:
 - to know the overall DQ of weatherdf.RData
 ```{r warning=FALSE}
 overall_dq <- DQ(data = weatherdf, var_time_name = 'date', maxdif = 1, units = 'days', ranges = weatherRange)
-overall_dq
 ```
 
 - to know the DQ of weatherdf.RData by windows. You should change initialWindow, skip and fixedWindow to execute different sizes of windows. 
 ```{r warning=FALSE}
 window_dq <- DQ(data = weatherdf, var_time_name = 'date', maxdif = 1, units = 'days', ranges = weatherRange, windows = TRUE, initialWindow = 50, skip = 10, fixedWindow = FALSE)
-window_dq
 ```
 
 - to plot the results of DQ function. You can use the logical arguments normal to decide if normality metrics (Consistency, Typicality and Moderation) are shown in the graph and totalquality to show the overall DQ metric.
